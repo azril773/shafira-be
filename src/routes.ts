@@ -4,6 +4,8 @@
 import type { TsoaRoute } from '@tsoa/runtime';
 import {  fetchMiddlewares, ExpressTemplateService } from '@tsoa/runtime';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+import { TransactionController } from './controllers/transaction.controller';
+// WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { PurchaseController } from './controllers/purchase.controller';
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 import { ProductController } from './controllers/product.controller';
@@ -30,7 +32,7 @@ const models: TsoaRoute.Models = {
             "category": {"dataType":"string","required":true},
             "barcode": {"dataType":"string","required":true},
             "price": {"dataType":"double","required":true},
-            "qty": {"dataType":"double","required":true},
+            "stock": {"dataType":"double","required":true},
         },
         "additionalProperties": false,
     },
@@ -254,59 +256,29 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsProductController_getProductByBarcode: Record<string, TsoaRoute.ParameterSchema> = {
-                barcode: {"in":"path","name":"barcode","required":true,"dataType":"string"},
+        const argsProductController_searchProducts: Record<string, TsoaRoute.ParameterSchema> = {
                 req: {"in":"request","name":"req","required":true,"dataType":"object"},
                 defaultErrorResponse: {"in":"res","name":"500","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"message":{"dataType":"string","required":true}}},
+                page: {"in":"query","name":"page","required":true,"dataType":"string"},
+                barcode: {"in":"query","name":"barcode","dataType":"string"},
+                code: {"in":"query","name":"code","dataType":"string"},
         };
-        app.get('/products/barcode/:barcode',
+        app.get('/products/search',
             ...(fetchMiddlewares<RequestHandler>(ProductController)),
-            ...(fetchMiddlewares<RequestHandler>(ProductController.prototype.getProductByBarcode)),
+            ...(fetchMiddlewares<RequestHandler>(ProductController.prototype.searchProducts)),
 
-            async function ProductController_getProductByBarcode(request: ExRequest, response: ExResponse, next: any) {
+            async function ProductController_searchProducts(request: ExRequest, response: ExResponse, next: any) {
 
             // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 
             let validatedArgs: any[] = [];
             try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsProductController_getProductByBarcode, request, response });
+                validatedArgs = templateService.getValidatedArgs({ args: argsProductController_searchProducts, request, response });
 
                 const controller = new ProductController();
 
               await templateService.apiHandler({
-                methodName: 'getProductByBarcode',
-                controller,
-                response,
-                next,
-                validatedArgs,
-                successStatus: undefined,
-              });
-            } catch (err) {
-                return next(err);
-            }
-        });
-        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-        const argsProductController_getProductByCode: Record<string, TsoaRoute.ParameterSchema> = {
-                code: {"in":"path","name":"code","required":true,"dataType":"string"},
-                req: {"in":"request","name":"req","required":true,"dataType":"object"},
-                defaultErrorResponse: {"in":"res","name":"500","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"message":{"dataType":"string","required":true}}},
-        };
-        app.get('/products/code/:code',
-            ...(fetchMiddlewares<RequestHandler>(ProductController)),
-            ...(fetchMiddlewares<RequestHandler>(ProductController.prototype.getProductByCode)),
-
-            async function ProductController_getProductByCode(request: ExRequest, response: ExResponse, next: any) {
-
-            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
-
-            let validatedArgs: any[] = [];
-            try {
-                validatedArgs = templateService.getValidatedArgs({ args: argsProductController_getProductByCode, request, response });
-
-                const controller = new ProductController();
-
-              await templateService.apiHandler({
-                methodName: 'getProductByCode',
+                methodName: 'searchProducts',
                 controller,
                 response,
                 next,

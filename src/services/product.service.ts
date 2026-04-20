@@ -26,11 +26,19 @@ export class ProductService {
   }
 
 
-  public async getProductByCode(code: string): Promise<Product[]> {
-    return await this.productRepository.find({ where: { code } });
+  public async searchProducts({ page, barcode, code }: { page: number; barcode?: string; code?: string }): Promise<{ products: Product[], totalPages: number }> {
+    const limit = 10
+    const offset = (page - 1) * limit;
+    const queryBuilder = this.productRepository.createQueryBuilder("product");
+    if (barcode) {
+      queryBuilder.where("product.barcode = :barcode", { barcode });
+    }
+    if (code) {
+      queryBuilder.andWhere("product.code = :code", { code });
+    }
+    queryBuilder.skip(offset).take(limit);
+    const [products, total] = await queryBuilder.getManyAndCount();
+    return { products, totalPages: Math.ceil(total / limit) };
   }
 
-  public async getProductByBarcode(barcode: string): Promise<Product[]> {
-    return await this.productRepository.find({ where: { barcode } });
-  }
 }

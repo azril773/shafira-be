@@ -14,6 +14,7 @@ import {
   Tags,
   TsoaResponse,
 } from "tsoa";
+import { User } from "@models/user.model";
 
 @Route("auth")
 @Tags("Auth")
@@ -29,22 +30,22 @@ export class AuthController extends Controller {
     @Body() body: LoginBody,
     @Request() req: ExRequest,
     @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
-  ): Promise<{ access_token: string }> {
+  ): Promise<{ user: User; token: string }> {
     try {
       validateRequest(req);
-      const { access_token } = await this.authService.login(
+      const { user, access_token } = await this.authService.login(
         body.username,
         body.password,
       );
-      console.log("OKOKOK")
       req.res?.cookie("access_token", access_token, {
+        domain: process.env.COOKIE_DOMAIN,
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
+        sameSite: "lax",
         maxAge: 1 * 24 * 60 * 60 * 1000, // 1 day
       });
 
-      return { access_token: access_token };
+      return { user, token: access_token };
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type
       return handleControllerError(error, { defaultErrorResponse });

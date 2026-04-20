@@ -34,7 +34,7 @@
 						"type": "number",
 						"format": "double"
 					},
-					"qty": {
+					"stock": {
 						"type": "number",
 						"format": "double"
 					}
@@ -46,7 +46,7 @@
 					"category",
 					"barcode",
 					"price",
-					"qty"
+					"stock"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -502,19 +502,32 @@
 				}
 			}
 		},
-		"/products/barcode/{barcode}": {
+		"/products/search": {
 			"get": {
-				"operationId": "GetProductByBarcode",
+				"operationId": "SearchProducts",
 				"responses": {
 					"200": {
 						"description": "Ok",
 						"content": {
 							"application/json": {
 								"schema": {
-									"items": {
-										"$ref": "#/components/schemas/Product"
+									"properties": {
+										"totalPages": {
+											"type": "number",
+											"format": "double"
+										},
+										"products": {
+											"items": {
+												"$ref": "#/components/schemas/Product"
+											},
+											"type": "array"
+										}
 									},
-									"type": "array"
+									"required": [
+										"totalPages",
+										"products"
+									],
+									"type": "object"
 								}
 							}
 						}
@@ -544,61 +557,25 @@
 				"security": [],
 				"parameters": [
 					{
-						"in": "path",
-						"name": "barcode",
+						"in": "query",
+						"name": "page",
 						"required": true,
 						"schema": {
 							"type": "string"
 						}
-					}
-				]
-			}
-		},
-		"/products/code/{code}": {
-			"get": {
-				"operationId": "GetProductByCode",
-				"responses": {
-					"200": {
-						"description": "Ok",
-						"content": {
-							"application/json": {
-								"schema": {
-									"items": {
-										"$ref": "#/components/schemas/Product"
-									},
-									"type": "array"
-								}
-							}
+					},
+					{
+						"in": "query",
+						"name": "barcode",
+						"required": false,
+						"schema": {
+							"type": "string"
 						}
 					},
-					"500": {
-						"description": "",
-						"content": {
-							"application/json": {
-								"schema": {
-									"properties": {
-										"message": {
-											"type": "string"
-										}
-									},
-									"required": [
-										"message"
-									],
-									"type": "object"
-								}
-							}
-						}
-					}
-				},
-				"tags": [
-					"Products"
-				],
-				"security": [],
-				"parameters": [
 					{
-						"in": "path",
+						"in": "query",
 						"name": "code",
-						"required": true,
+						"required": false,
 						"schema": {
 							"type": "string"
 						}
@@ -616,12 +593,16 @@
 							"application/json": {
 								"schema": {
 									"properties": {
-										"access_token": {
+										"token": {
 											"type": "string"
+										},
+										"user": {
+											"$ref": "#/components/schemas/User"
 										}
 									},
 									"required": [
-										"access_token"
+										"token",
+										"user"
 									],
 									"type": "object"
 								}

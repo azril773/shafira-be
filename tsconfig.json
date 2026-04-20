@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
+    "rootDir": "src",
     "target": "es2022",
     "module": "commonjs",
+    "ignoreDeprecations": "6.0",
     "outDir": "build",
     "strict": true,
     "esModuleInterop": true,
@@ -9,7 +11,6 @@
     "forceConsistentCasingInFileNames": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "moduleResolution": "node",
     "incremental": true,
     "baseUrl": "./src",
     "paths": {
@@ -20,7 +21,7 @@
       "@services/*": ["./services/*"],
       "@models/*": ["./models/*"],
       "@errors/*": ["./errors/*"],
-      "@type/*": ["./type/*"],
+      "@types/*": ["./types/*"],
       "@constants/*": ["./constants/*"]
     }
   },

@@ -73,7 +73,7 @@ export class PurchaseService {
           throw new EntityNotFoundError("product tidak ada", {
             id: purchase.productId,
           });
-        product.qty += purchase.qty;
+        product.stock += purchase.qty;
         await transactionalEntityManager.save(product);
       } else if (purchase.status === POSTED && body.status === CANCELLED) {
         const product = await transactionalEntityManager.findOne(Product, {
@@ -83,12 +83,12 @@ export class PurchaseService {
           throw new EntityNotFoundError("product tidak ada", {
             id: purchase.productId,
           });
-        if (product.qty < purchase.qty) {
+        if (product.stock < purchase.qty) {
           throw new Error(
             "Tidak dapat membatalkan purchase karena stok produk tidak mencukupi",
           );
         }
-        product.qty -= purchase.qty;
+        product.stock -= purchase.qty;
         await transactionalEntityManager.save(product);
       }
       purchase.status = body.status;

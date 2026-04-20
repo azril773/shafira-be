@@ -5,6 +5,7 @@ import 'reflect-metadata';
 import { ValidateError } from 'tsoa';
 import { EntityNotFoundError, ForbiddenError, JSONError, UnauthorizedError } from '@errors/custom_error';
 import { RegisterRoutes } from './routes';
+import cookie from "cookie-parser"
 import { RES_CODE, RES_MSG } from '@constants/response_code';
 
 export const app: Application = express();
@@ -13,7 +14,7 @@ export async function configureApp(app: Application) {
   // CORS Middleware
   app.use(
     cors({
-      // origin: 'inventory.sampledomain.com', // Allow only this origin
+      origin: 'http://localhost:5173', // Allow only this origin
       methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow only these methods
       allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Expires', 'Pragma'], // Allow only these headers
       credentials: true
@@ -22,10 +23,10 @@ export async function configureApp(app: Application) {
 
   // Cache-Control Middleware
   app.use((req: ExRequest, res: ExResponse, next: NextFunction) => {
-    res.setHeader('Cache-Control', 'public, max-age=3600');
+    // res.setHeader('Cache-Control', 'public, max-age=3600');
     const expires = new Date(Date.now() + 3600 * 1000).toUTCString();
-    res.setHeader('Expires', expires);
-    res.setHeader('Pragma', 'public');
+    // res.setHeader('Expires', expires);
+    // res.setHeader('Pragma', 'public');
     next();
   });
 
@@ -42,6 +43,8 @@ export async function configureApp(app: Application) {
       saveUninitialized: false,
     }),
   );
+
+  app.use(cookie())
 
   // Static Files Middleware
   app.use(express.static('public'));

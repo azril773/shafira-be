@@ -19,7 +19,7 @@
       "@services/*": ["./services/*"],
       "@models/*": ["./models/*"],
       "@errors/*": ["./errors/*"],
-      "@type/*": ["./type/*"],
+      "@types/*": ["./types/*"],
       "@constants/*": ["./constants/*"]
     }
   }

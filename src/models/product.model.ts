@@ -27,5 +27,5 @@ export class Product {
   price!: number;
 
   @Column({ type: "integer", nullable: false, default: 0 })
-  qty!: number;
+  stock!: number;
 }

@@ -3,7 +3,7 @@ import { Product } from "@models/product.model";
 import { ProductService } from "@services/product.service";
 import { ProductBody, productSchema } from "types/product";
 import { Request as ExRequest } from "express";
-import { checkSchema, param, validationResult } from "express-validator";
+import { checkSchema, param, query, validationResult } from "express-validator";
 import {
   Body,
   Controller,
@@ -11,12 +11,15 @@ import {
   Middlewares,
   Path,
   Post,
+  Query,
   Request,
   Res,
   Route,
   Tags,
   TsoaResponse,
 } from "tsoa";
+import { checkRole } from "utils/middleware";
+import { ADMIN, CASHIER } from "@constants/user";
 
 @Route("products")
 @Tags("Products")
@@ -24,7 +27,7 @@ export class ProductController extends Controller {
   private productService = new ProductService();
 
   @Post("")
-  @Middlewares(checkSchema(productSchema))
+  @Middlewares([checkSchema(productSchema)])
   public async createProduct(
     @Body() body: ProductBody,
     @Request() req: ExRequest,
@@ -32,6 +35,7 @@ export class ProductController extends Controller {
   ): Promise<Product> {
     try {
       validationResult(req);
+      await checkRole(req, ADMIN);
       return await this.productService.createProduct(body);
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type
@@ -39,32 +43,27 @@ export class ProductController extends Controller {
     }
   }
 
-  @Get("barcode/{barcode}")
-  @Middlewares([param("barcode").trim().escape().isString().notEmpty()])
-  public async getProductByBarcode(
-    @Path() barcode: string,
+  @Get("search")
+  @Middlewares([
+    query("page").trim().escape().isString(),
+    query("barcode").trim().escape().isString().optional({values: 'undefined'}),
+    query("code").trim().escape().isString().optional({values: 'undefined'}),
+  ])
+  public async searchProducts(
     @Request() req: ExRequest,
     @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
-  ): Promise<Product[]> {
+    @Query() page: string,
+    @Query() barcode?: string,
+    @Query() code?: string,
+  ): Promise<{ products: Product[]; totalPages: number }> {
     try {
       validationResult(req);
-      return await this.productService.getProductByBarcode(barcode);
-    } catch (error) {
-      // @ts-expect-error TsoaResponse any return type
-      return handleControllerError(error, { defaultErrorResponse });
-    }
-  }
-
-  @Get("code/{code}")
-  @Middlewares([param("code").trim().escape().isString().notEmpty()])
-  public async getProductByCode(
-    @Path() code: string,
-    @Request() req: ExRequest,
-    @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
-  ): Promise<Product[]> {
-    try {
-      validationResult(req);
-      return await this.productService.getProductByCode(code);
+      await checkRole(req, ADMIN, CASHIER);
+      return await this.productService.searchProducts({
+        page: page ? parseInt(page) : 1,
+        barcode,
+        code,
+      });
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type
       return handleControllerError(error, { defaultErrorResponse });
