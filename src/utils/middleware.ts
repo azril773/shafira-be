@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from "express";
+import { Request } from "express";
 import { verifyJWT } from "./jwt";
 import { UnauthorizedError } from "@errors/custom_error";
 import { JwtTokenPayload } from "types/auth";

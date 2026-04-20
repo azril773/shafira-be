@@ -1,5 +1,4 @@
 import dataSource from "@config/database";
-import { UnauthorizedError } from "@errors/custom_error";
 import { User } from "@models/user.model";
 import bcrypt from "bcrypt";
 import { randomUUID } from "crypto";

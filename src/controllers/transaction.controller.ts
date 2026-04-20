@@ -1,19 +1,7 @@
-import { Transaction } from "@models/transaction.model";
 import {
-  Body,
-  Middlewares,
-  Post,
-  Request,
-  Res,
   Route,
-  TsoaResponse,
 } from "tsoa";
-import { Request as ExRequest } from "express";
-import { validationResult } from "express-validator";
-import { TransactionBody, TransactionSchema } from "types/transaction_type";
 import { TransactionService } from "@services/transaction.service";
-import { checkRole } from "utils/middleware";
-import { ADMIN, CASHIER } from "@constants/user";
 
 @Route("transactions")
 export class TransactionController {

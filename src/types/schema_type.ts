@@ -1,4 +1,4 @@
-import { ParamSchema, Schema } from "express-validator";
+import { ParamSchema } from "express-validator";
 
 
 export const dateParamSchema = (nullable: boolean): ParamSchema => {
