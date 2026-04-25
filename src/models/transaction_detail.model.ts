@@ -30,10 +30,14 @@ export class TransactionDetail {
   historicalCode!: string;
 
   @Column({ type: "varchar", nullable: false })
+  historyalPriceName!: string;
+ 
+  @Column({ type: "varchar", nullable: false })
   historicalPrice!: number;
 
   @Column({ type: "varchar", nullable: false })
   historicalCategory!: string;
+  
 
   @Column({ type: "uuid", nullable: false })
   productId!: UUID;

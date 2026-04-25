@@ -34,16 +34,16 @@ export class TransactionService {
             `Product with id ${transactionDetail.product_id} not found`,
           );
         }
-        if (product.qty < transactionDetail.qty) {
+        if (product.stock < transactionDetail.qty) {
           throw new Error(`Insufficient stock for product ${product.name}`);
         }
-        product.qty -= transactionDetail.qty;
+        product.stock -= transactionDetail.qty;
         await transactionalEntityManager.save(product);
         newTransactionDetail.productId = product.id;
         newTransactionDetail.historicalName = product.name;
         newTransactionDetail.historicalBarcode = product.barcode;
         newTransactionDetail.historicalCode = product.code;
-        newTransactionDetail.historicalPrice = product.price;
+        newTransactionDetail.historicalPrice = 0;
         newTransactionDetail.historicalCategory = product.category;
         newTransactionDetail.qty = transactionDetail.qty;
         transactionDetails.push(newTransactionDetail);

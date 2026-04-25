@@ -13,44 +13,6 @@
 				"description": "Stringified UUIDv4.\nSee [RFC 4112](https://tools.ietf.org/html/rfc4122)",
 				"pattern": "[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-4[0-9A-Fa-f]{3}-[89ABab][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}"
 			},
-			"Product": {
-				"properties": {
-					"id": {
-						"$ref": "#/components/schemas/UUID"
-					},
-					"name": {
-						"type": "string"
-					},
-					"code": {
-						"type": "string"
-					},
-					"category": {
-						"type": "string"
-					},
-					"barcode": {
-						"type": "string"
-					},
-					"price": {
-						"type": "number",
-						"format": "double"
-					},
-					"stock": {
-						"type": "number",
-						"format": "double"
-					}
-				},
-				"required": [
-					"id",
-					"name",
-					"code",
-					"category",
-					"barcode",
-					"price",
-					"stock"
-				],
-				"type": "object",
-				"additionalProperties": false
-			},
 			"User": {
 				"properties": {
 					"id": {
@@ -115,6 +77,89 @@
 					"id",
 					"name",
 					"phone"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"VendorBody": {
+				"properties": {
+					"phone": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"phone",
+					"name"
+				],
+				"type": "object"
+			},
+			"Product": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"name": {
+						"type": "string"
+					},
+					"code": {
+						"type": "string"
+					},
+					"category": {
+						"type": "string"
+					},
+					"barcode": {
+						"type": "string"
+					},
+					"prices": {
+						"items": {
+							"$ref": "#/components/schemas/PriceProduct"
+						},
+						"type": "array"
+					},
+					"stock": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"name",
+					"code",
+					"category",
+					"barcode",
+					"prices",
+					"stock"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PriceProduct": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"productId": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"product": {
+						"$ref": "#/components/schemas/Product"
+					},
+					"name": {
+						"type": "string"
+					},
+					"price": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"productId",
+					"name",
+					"price"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -189,22 +234,22 @@
 						"type": "number",
 						"format": "double"
 					},
-					"purchase_date": {
+					"purchaseDate": {
 						"type": "string",
 						"format": "date-time"
 					},
-					"vendor_id": {
+					"vendorId": {
 						"$ref": "#/components/schemas/UUID"
 					},
-					"product_id": {
+					"productId": {
 						"$ref": "#/components/schemas/UUID"
 					}
 				},
 				"required": [
 					"qty",
-					"purchase_date",
-					"vendor_id",
-					"product_id"
+					"purchaseDate",
+					"vendorId",
+					"productId"
 				],
 				"type": "object"
 			},
@@ -229,17 +274,33 @@
 						"type": "number",
 						"format": "double"
 					},
-					"purchase_date": {
+					"purchaseDate": {
 						"type": "string",
 						"format": "date-time"
 					},
-					"vendor_id": {
+					"vendorId": {
 						"$ref": "#/components/schemas/UUID"
 					},
-					"product_id": {
+					"productId": {
 						"$ref": "#/components/schemas/UUID"
 					}
 				},
+				"type": "object"
+			},
+			"Price": {
+				"properties": {
+					"price": {
+						"type": "number",
+						"format": "double"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"price",
+					"name"
+				],
 				"type": "object"
 			},
 			"ProductBody": {
@@ -250,9 +311,11 @@
 					"category": {
 						"type": "string"
 					},
-					"price": {
-						"type": "number",
-						"format": "double"
+					"prices": {
+						"items": {
+							"$ref": "#/components/schemas/Price"
+						},
+						"type": "array"
 					},
 					"name": {
 						"type": "string"
@@ -261,7 +324,7 @@
 				"required": [
 					"barcode",
 					"category",
-					"price",
+					"prices",
 					"name"
 				],
 				"type": "object"
@@ -293,6 +356,233 @@
 		}
 	},
 	"paths": {
+		"/vendors": {
+			"get": {
+				"operationId": "GetVendors",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Vendor"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Vendors"
+				],
+				"security": [],
+				"parameters": []
+			},
+			"post": {
+				"operationId": "CreateVendor",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Vendors"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/VendorBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/vendors/search": {
+			"get": {
+				"operationId": "SearchVendors",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"totalPages": {
+											"type": "number",
+											"format": "double"
+										},
+										"vendors": {
+											"items": {
+												"$ref": "#/components/schemas/Vendor"
+											},
+											"type": "array"
+										}
+									},
+									"required": [
+										"totalPages",
+										"vendors"
+									],
+									"type": "object"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Vendors"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "name",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "phone",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/vendors/{id}": {
+			"put": {
+				"operationId": "UpdateVendor",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Vendors"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/VendorBody"
+							}
+						}
+					}
+				}
+			}
+		},
 		"/purchases": {
 			"post": {
 				"operationId": "CreatePurchase",
@@ -341,6 +631,47 @@
 						}
 					}
 				}
+			},
+			"get": {
+				"operationId": "SearchPurchase",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Vendor"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Purchases"
+				],
+				"security": [],
+				"parameters": []
 			}
 		},
 		"/purchases/change-status": {
@@ -453,6 +784,47 @@
 			}
 		},
 		"/products": {
+			"get": {
+				"operationId": "GetProducts",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Product"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Products"
+				],
+				"security": [],
+				"parameters": []
+			},
 			"post": {
 				"operationId": "CreateProduct",
 				"responses": {
@@ -490,6 +862,65 @@
 				],
 				"security": [],
 				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ProductBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/products/{id}": {
+			"put": {
+				"operationId": "UpdateProduct",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Product"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Products"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					}
+				],
 				"requestBody": {
 					"required": true,
 					"content": {

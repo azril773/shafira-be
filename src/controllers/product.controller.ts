@@ -3,13 +3,15 @@ import { Product } from "@models/product.model";
 import { ProductService } from "@services/product.service";
 import { ProductBody, productSchema } from "types/product";
 import { Request as ExRequest } from "express";
-import { checkSchema, query, validationResult } from "express-validator";
+import { checkSchema, param, query, validationResult } from "express-validator";
 import {
   Body,
   Controller,
   Get,
   Middlewares,
+  Path,
   Post,
+  Put,
   Query,
   Request,
   Res,
@@ -19,12 +21,28 @@ import {
 } from "tsoa";
 import { checkRole } from "utils/middleware";
 import { ADMIN, CASHIER } from "@constants/user";
+import { UUID } from "types/common_type";
 
 @Route("products")
 @Tags("Products")
 export class ProductController extends Controller {
   private productService = new ProductService();
 
+
+
+  @Get("")
+  public async getProducts(
+    @Request() req: ExRequest,
+    @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
+  ): Promise<Product[]> {
+    try {
+      await checkRole(req, ADMIN);
+      return await this.productService.getProducts();
+    } catch (error) {
+      // @ts-expect-error TsoaResponse any return type
+      return handleControllerError(error, { defaultErrorResponse });
+    }
+  }
   @Post("")
   @Middlewares([checkSchema(productSchema)])
   public async createProduct(
@@ -36,6 +54,24 @@ export class ProductController extends Controller {
       validationResult(req);
       await checkRole(req, ADMIN);
       return await this.productService.createProduct(body);
+    } catch (error) {
+      // @ts-expect-error TsoaResponse any return type
+      return handleControllerError(error, { defaultErrorResponse });
+    }
+  }
+
+  @Put("{id}")
+  @Middlewares([param("id").trim().escape().isUUID(), checkSchema(productSchema)])
+  public async updateProduct(
+    @Path() id: UUID,
+    @Body() body: ProductBody,
+    @Request() req: ExRequest,
+    @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
+  ): Promise<Product> {
+    try {
+      validationResult(req);
+      await checkRole(req, ADMIN);
+      return await this.productService.updateProduct(id, body);
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type
       return handleControllerError(error, { defaultErrorResponse });

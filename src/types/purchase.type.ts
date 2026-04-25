@@ -3,9 +3,9 @@ import { UUID } from "./common_type";
 import { CANCELLED, PENDING, POSTED } from "@constants/status";
 
 export type CreatePurchase = {
-  product_id: UUID;
-  vendor_id: UUID;
-  purchase_date: Date;
+  productId: UUID;
+  vendorId: UUID;
+  purchaseDate: Date;
   qty: number;
 };
 
@@ -15,23 +15,23 @@ export type ChangeStatusPurchase = {
 };
 
 export type UpdatePurchase = {
-  product_id?: UUID;
-  vendor_id?: UUID;
-  purchase_date?: Date;
+  productId?: UUID;
+  vendorId?: UUID;
+  purchaseDate?: Date;
   qty?: number;
 };
 
 export const createPurchaseSchema: Schema = {
-  product_id: {
+  productId: {
     isUUID: true,
     notEmpty: true,
   },
-  vendor_id: {
+  vendorId: {
     isUUID: true,
     notEmpty: true,
   },
-  purchase_date: {
-    isDate: true,
+  purchaseDate: {
+    isISO8601: true,
     notEmpty: true,
   },
   qty: {
@@ -56,17 +56,17 @@ export const changeStatusPurchaseSchema: Schema = {
 };
 
 export const updatePurchaseSchema: Schema = {
-  product_id: {
+  productId: {
     optional: { options: { values: "undefined" } },
     isUUID: true,
   },
-  vendor_id: {
+  vendorId: {
     optional: { options: { values: "undefined" } },
     isUUID: true,
   },
-  purchase_date: {
+  purchaseDate: {
     optional: { options: { values: "undefined" } },
-    isDate: true,
+    isISO8601: true,
   },
   qty: {
     optional: { options: { values: "undefined" } },

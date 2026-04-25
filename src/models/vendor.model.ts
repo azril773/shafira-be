@@ -7,7 +7,7 @@ export class Vendor extends BaseV2 {
     @PrimaryGeneratedColumn("uuid")
     id!: UUID
 
-    @Column({type: "varchar", nullable: false})
+    @Column({type: "varchar", nullable: false, unique: true})
     name!: string
 
     @Column({type: "varchar", nullable: false})

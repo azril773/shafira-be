@@ -1,5 +1,4 @@
-import { AuthService } from "@services/auth.service";
-import { PurchaseService } from "@services/purchase.service";
+import { Vendor } from "@models/vendor.model";
 import {
   Body,
   Controller,
@@ -8,6 +7,7 @@ import {
   Path,
   Post,
   Put,
+  Query,
   Request,
   Res,
   Route,
@@ -15,89 +15,87 @@ import {
   TsoaResponse,
 } from "tsoa";
 import { Request as ExRequest } from "express";
+import { AuthService } from "@services/auth.service";
 import {
   handleControllerError,
   UnauthorizedError,
   validateRequest,
 } from "@errors/custom_error";
-import { checkSchema, param, query } from "express-validator";
+import { VendorService } from "@services/vendor.service";
 import {
-  ChangeStatusPurchase,
-  changeStatusPurchaseSchema,
-  CreatePurchase,
-  createPurchaseSchema,
-  UpdatePurchase,
-  updatePurchaseSchema,
-} from "types/purchase.type";
-import { Purchase } from "@models/purchase.model";
+  VendorBody,
+  vendorSchema,
+} from "types/vendor_type";
+import { checkSchema, param, query } from "express-validator";
 import { UUID } from "types/common_type";
-import { Vendor } from "@models/vendor.model";
 
-@Route("purchases")
-@Tags("Purchases")
-export class PurchaseController extends Controller {
-  private purchaseService = new PurchaseService();
+@Route("vendors")
+@Tags("Vendors")
+export class VendorController extends Controller {
   private authService = new AuthService();
+  private vendorService = new VendorService();
 
-  @Post("")
-  @Middlewares(checkSchema(createPurchaseSchema))
-  public async createPurchase(
-    @Body() body: CreatePurchase,
-    @Request() req: ExRequest,
-    @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
-  ): Promise<Purchase> {
-    try {
-      validateRequest(req);
-      const token = req.cookies.access_token;
-      const user = await this.authService.getUserByToken(token as string);
-      if (!user) throw new UnauthorizedError("user tidak ada");
-      return await this.purchaseService.createPurchase(user, body);
-    } catch (error) {
-      // @ts-expect-error TsoaResponse any return type
-      return handleControllerError(error, { defaultErrorResponse });
-    }
-  }
   @Get("")
-  @Middlewares([
-    query("page").trim().escape().optional({ values: "undefined" }),
-    query("purchaseDate")
-      .trim()
-      .escape()
-      .isISO8601()
-      .optional({ values: "undefined" }),
-  ])
-  public async searchPurchase(
+  public async getVendors(
     @Request() req: ExRequest,
     @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
-    // @Query() page?: string,
-    // @Query() purchaseDate?: string,
   ): Promise<Vendor[]> {
     try {
-      validateRequest(req);
       const token = req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
-      // return await this.purchaseService.getVendors();
-      return [];
+      return await this.vendorService.getVendors();
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type
       return handleControllerError(error, { defaultErrorResponse });
     }
   }
 
-  @Put("change-status")
-  @Middlewares(checkSchema(changeStatusPurchaseSchema))
-  public async updateStatus(
-    @Body() body: ChangeStatusPurchase,
+  @Get("search")
+  @Middlewares([
+    query("page")
+      .trim()
+      .escape()
+      .isInt({ min: 1 })
+      .optional({ values: "undefined" }),
+    query("name").trim().escape().optional({ values: "undefined" }),
+    query("phone").trim().escape().optional({ values: "undefined" }),
+  ])
+  public async searchVendors(
     @Request() req: ExRequest,
     @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
-  ): Promise<Purchase> {
+    @Query() page?: string,
+    @Query() name?: string,
+    @Query() phone?: string,
+  ): Promise<{ vendors: Vendor[]; totalPages: number }> {
+    try {
+      const token = req.cookies.access_token;
+      const user = await this.authService.getUserByToken(token as string);
+      if (!user) throw new UnauthorizedError("user tidak ada");
+      return await this.vendorService.searchVendors({
+        page: page ? parseInt(page, 10) : 1,
+        name,
+        phone,
+      });
+    } catch (error) {
+      // @ts-expect-error TsoaResponse any return type
+      return handleControllerError(error, { defaultErrorResponse });
+    }
+  }
+
+  @Post("")
+  @Middlewares([checkSchema(vendorSchema)])
+  public async createVendor(
+    @Body() body: VendorBody,
+    @Request() req: ExRequest,
+    @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
+  ) {
     try {
       validateRequest(req);
       const token = req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
-      return await this.purchaseService.updateStatus(user, body);
+      return await this.vendorService.createVendor(user, body);
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type
       return handleControllerError(error, { defaultErrorResponse });
@@ -107,20 +105,20 @@ export class PurchaseController extends Controller {
   @Put("{id}")
   @Middlewares([
     param("id").trim().escape().isUUID(),
-    checkSchema(updatePurchaseSchema),
+    checkSchema(vendorSchema),
   ])
-  public async updatePurchase(
+  public async updateVendor(
     @Path() id: UUID,
-    @Body() body: UpdatePurchase,
+    @Body() body: VendorBody,
     @Request() req: ExRequest,
     @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
-  ): Promise<Purchase> {
+  ) {
     try {
       validateRequest(req);
       const token = req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
-      return await this.purchaseService.updatePurchase(user, id, body);
+      return await this.vendorService.updateVendor(id, user, body);
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type
       return handleControllerError(error, { defaultErrorResponse });

@@ -1,6 +1,5 @@
 import dataSource from "@config/database";
 import { CANCELLED, PENDING, POSTED } from "@constants/status";
-import { EntityNotFoundError } from "@errors/custom_error";
 import { Product } from "@models/product.model";
 import { Purchase } from "@models/purchase.model";
 import { User } from "@models/user.model";
@@ -19,23 +18,17 @@ export class PurchaseService {
   ): Promise<Purchase> {
     return await dataSource.transaction(async (transactionalEntityManager) => {
       const product = await transactionalEntityManager.findOne(Product, {
-        where: { id: body.product_id },
+        where: { id: body.productId },
       });
-      if (!product)
-        throw new EntityNotFoundError("product tidak ada", {
-          id: body.product_id,
-        });
+      if (!product) throw new Error("product tidak ada");
       const vendor = await transactionalEntityManager.findOne(Vendor, {
-        where: { id: body.vendor_id },
+        where: { id: body.vendorId },
       });
-      if (!vendor)
-        throw new EntityNotFoundError("vendor tidak ada", {
-          id: body.vendor_id,
-        });
+      if (!vendor) throw new Error("vendor tidak ada");
       const purchase = new Purchase();
-      purchase.productId = body.product_id;
-      purchase.vendorId = body.vendor_id;
-      purchase.purchaseDate = body.purchase_date;
+      purchase.productId = body.productId;
+      purchase.vendorId = body.vendorId;
+      purchase.purchaseDate = body.purchaseDate;
       purchase.status = PENDING;
       purchase.qty = body.qty;
       purchase.createdById = user.id;
@@ -43,6 +36,10 @@ export class PurchaseService {
       return await transactionalEntityManager.save(purchase);
     });
   }
+
+  // public async searchPurchases(query: any): Promise<Purchase[]> {
+  //   return await dataSource.getRepository(Purchase).find({ where: query });
+  // }
 
   public async updateStatus(
     user: User,
@@ -52,10 +49,7 @@ export class PurchaseService {
       const purchase = await transactionalEntityManager.findOne(Purchase, {
         where: { id: body.id },
       });
-      if (!purchase)
-        throw new EntityNotFoundError("purchase tidak ada", {
-          id: body.id,
-        });
+      if (!purchase) throw new Error("purchase tidak ada");
       const allowedChange: { [key: string]: string[] } = {
         [PENDING]: [POSTED, CANCELLED],
         [POSTED]: [CANCELLED],
@@ -65,24 +59,14 @@ export class PurchaseService {
         throw new Error("Perubahan status tidak valid");
       }
 
+      const product = await transactionalEntityManager.findOne(Product, {
+        where: { id: purchase.productId },
+      });
+      if (!product) throw new Error("product tidak ada");
       if (body.status === POSTED) {
-        const product = await transactionalEntityManager.findOne(Product, {
-          where: { id: purchase.productId },
-        });
-        if (!product)
-          throw new EntityNotFoundError("product tidak ada", {
-            id: purchase.productId,
-          });
         product.stock += purchase.qty;
         await transactionalEntityManager.save(product);
       } else if (purchase.status === POSTED && body.status === CANCELLED) {
-        const product = await transactionalEntityManager.findOne(Product, {
-          where: { id: purchase.productId },
-        });
-        if (!product)
-          throw new EntityNotFoundError("product tidak ada", {
-            id: purchase.productId,
-          });
         if (product.stock < purchase.qty) {
           throw new Error(
             "Tidak dapat membatalkan purchase karena stok produk tidak mencukupi",
@@ -106,37 +90,28 @@ export class PurchaseService {
       const purchase = await transactionalEntityManager.findOne(Purchase, {
         where: { id: id },
       });
-      if (!purchase)
-        throw new EntityNotFoundError("purchase tidak ada", {
-          id: id,
-        });
+      if (!purchase) throw new Error("purchase tidak ada");
 
       if (purchase.status === POSTED)
         throw new Error("Purchase yang sudah diposting tidak bisa diubah");
 
-      if (body.product_id) {
+      if (body.productId) {
         const product = await transactionalEntityManager.findOne(Product, {
-          where: { id: body.product_id },
+          where: { id: body.productId },
         });
-        if (!product)
-          throw new EntityNotFoundError("product tidak ada", {
-            id: body.product_id,
-          });
-        purchase.productId = body.product_id;
+        if (!product) throw new Error("product tidak ada");
+        purchase.productId = body.productId;
       }
 
-      if (body.vendor_id) {
+      if (body.vendorId) {
         const vendor = await transactionalEntityManager.findOne(Vendor, {
-          where: { id: body.vendor_id },
+          where: { id: body.vendorId },
         });
-        if (!vendor)
-          throw new EntityNotFoundError("vendor tidak ada", {
-            id: body.vendor_id,
-          });
-        purchase.vendorId = body.vendor_id;
+        if (!vendor) throw new Error("vendor tidak ada");
+        purchase.vendorId = body.vendorId;
       }
 
-      if (body.purchase_date) purchase.purchaseDate = body.purchase_date;
+      if (body.purchaseDate) purchase.purchaseDate = body.purchaseDate;
       if (body.qty) purchase.qty = body.qty;
 
       purchase.updatedById = user.id;

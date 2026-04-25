@@ -1,6 +1,6 @@
 import { UUID } from "types/common_type";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
-import { DecimalTransformer } from "utils/decimal_transformer";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { PriceProduct } from "./price.model";
 
 @Entity()
 export class Product {
@@ -19,12 +19,8 @@ export class Product {
   @Column({ type: "varchar", length: 150, nullable: false })
   barcode!: string;
 
-  @Column({
-    type: "decimal",
-    nullable: false,
-    transformer: new DecimalTransformer(),
-  })
-  price!: number;
+  @OneToMany(() => PriceProduct, (price) => price.product, { cascade: true })
+  prices!: PriceProduct[];
 
   @Column({ type: "integer", nullable: false, default: 0 })
   stock!: number;
