@@ -44,4 +44,20 @@ export class AuthService {
     return user;
   }
 
+  public async verifyAdmin(
+    username: string,
+    password: string,
+  ): Promise<{ ok: boolean }> {
+    const user = await this.userRepository.findOne({ where: { username } });
+    if (!user) {
+      throw new Error("User not found");
+    }
+    if (user.role !== "admin") {
+      throw new Error("User is not an admin");
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) throw new Error("Invalid password");
+    return { ok: true };
+  }
+
 }

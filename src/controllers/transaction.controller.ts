@@ -65,6 +65,7 @@ export class TransactionController extends Controller {
       .optional({ values: "undefined" }),
     query("status").trim().escape().optional({ values: "undefined" }),
     query("transactionNo").trim().escape().optional({ values: "undefined" }),
+    query("barcode").trim().escape().optional({ values: "undefined" }),
     query("date")
       .trim()
       .escape()
@@ -78,6 +79,7 @@ export class TransactionController extends Controller {
     @Query() status?: string,
     @Query() transactionNo?: string,
     @Query() date?: string,
+    @Query() barcode?: string,
   ): Promise<{ transactions: Transaction[]; totalPages: number }> {
     try {
       validateRequest(req);
@@ -89,6 +91,7 @@ export class TransactionController extends Controller {
         status,
         transactionNo,
         date,
+        barcode,
       });
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type

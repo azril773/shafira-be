@@ -51,4 +51,23 @@ export class AuthController extends Controller {
       return handleControllerError(error, { defaultErrorResponse });
     }
   }
+
+  @Post("verify-admin")
+  @Middlewares(
+    body("username").trim().escape().isString(),
+    body("password").trim().escape().isString(),
+  )
+  public async verifyAdmin(
+    @Body() body: LoginBody,
+    @Request() req: ExRequest,
+    @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
+  ): Promise<{ ok: boolean }> {
+    try {
+      validateRequest(req);
+      return await this.authService.verifyAdmin(body.username, body.password);
+    } catch (error) {
+      // @ts-expect-error TsoaResponse any return type
+      return handleControllerError(error, { defaultErrorResponse });
+    }
+  }
 }

@@ -7,7 +7,7 @@ import {
   CreateTransactionBody,
   RefundTransactionBody,
 } from "types/transaction_type";
-import { Between, In } from "typeorm";
+import { In } from "typeorm";
 import { UUID } from "types/common_type";
 
 export const TRX_POSTED = "POSTED";
@@ -128,31 +128,48 @@ export class TransactionService {
     status,
     transactionNo,
     date,
+    barcode,
   }: {
     page: number;
     status?: string;
     transactionNo?: string;
     date?: string;
+    barcode?: string;
   }): Promise<{ transactions: Transaction[]; totalPages: number }> {
     const limit = 10;
     const offset = (page - 1) * limit;
     const repo = dataSource.getRepository(Transaction);
-    const where: Record<string, unknown> = {};
-    if (status) where.status = status;
-    if (transactionNo) where.transactionNo = transactionNo;
+    const qb = repo
+      .createQueryBuilder("trx")
+      .leftJoinAndSelect("trx.transactionDetails", "detail")
+      .leftJoinAndSelect("trx.cashier", "cashier")
+      .orderBy("trx.createdAt", "DESC");
+
+    if (status) qb.andWhere("trx.status = :status", { status });
+    if (transactionNo)
+      qb.andWhere("trx.transactionNo ILIKE :tn", { tn: `%${transactionNo}%` });
     if (date) {
       const start = new Date(date);
       const end = new Date(date);
       end.setDate(end.getDate() + 1);
-      where.createdAt = Between(start, end);
+      qb.andWhere("trx.createdAt BETWEEN :start AND :end", { start, end });
     }
-    const [transactions, total] = await repo.findAndCount({
-      where,
-      order: { createdAt: "DESC" },
-      relations: { transactionDetails: true, cashier: true },
-      skip: offset,
-      take: limit,
-    });
+    if (barcode) {
+      const sub = repo
+        .manager
+        .getRepository(TransactionDetail)
+        .createQueryBuilder("d")
+        .select("d.transactionId")
+        .where("d.historicalBarcode ILIKE :bc", { bc: `%${barcode}%` });
+      qb.andWhere(`trx.id IN (${sub.getQuery()})`).setParameters(
+        sub.getParameters(),
+      );
+    }
+
+    const [transactions, total] = await qb
+      .skip(offset)
+      .take(limit)
+      .getManyAndCount();
     return { transactions, totalPages: Math.ceil(total / limit) };
   }
 
