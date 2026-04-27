@@ -4,22 +4,17 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Product } from "./product.model";
 import { Vendor } from "./vendor.model";
 import { BaseV2 } from "./basev2";
+import { PurchaseDetail } from "./purchase_detail.model";
 
 @Entity()
 export class Purchase extends BaseV2 {
   @PrimaryGeneratedColumn("uuid")
   id!: UUID;
-
-  @Column({ type: "uuid", nullable: false })
-  productId!: UUID;
-  @ManyToOne(() => Product, { nullable: false })
-  @JoinColumn({ name: "productId" })
-  product?: Product;
 
   @Column({ type: "uuid", nullable: false })
   vendorId!: UUID;
@@ -28,11 +23,15 @@ export class Purchase extends BaseV2 {
   vendor?: Vendor;
 
   @Column({ type: "varchar", nullable: false })
-  status!: string
+  status!: string;
 
-  @Column({type: 'timestamptz', nullable: false})
-  purchaseDate!: Date
+  @Column({ type: "timestamptz", nullable: false })
+  purchaseDate!: Date;
 
-  @Column({ type: "integer", nullable: false })
-  qty!: number;
+  @OneToMany(
+    () => PurchaseDetail,
+    (purchaseDetail) => purchaseDetail.purchase,
+    { cascade: true },
+  )
+  purchaseDetails?: PurchaseDetail[];
 }

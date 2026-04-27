@@ -42,4 +42,26 @@ export class Transaction extends Base {
 
   @Column({ type: "integer", nullable: false })
   totalQty!: number;
+
+  @Column({ type: "varchar", nullable: false, default: "POSTED" })
+  status!: string;
+
+  @Column({ type: "varchar", nullable: false, default: "Tunai" })
+  paymentMethod!: string;
+
+  @Column({
+    type: "decimal",
+    nullable: false,
+    default: 0,
+    transformer: new DecimalTransformer(),
+  })
+  cashAmount!: number;
+
+  @Column({
+    type: "decimal",
+    nullable: false,
+    default: 0,
+    transformer: new DecimalTransformer(),
+  })
+  changeAmount!: number;
 }

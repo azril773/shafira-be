@@ -8,6 +8,7 @@ import {
 import { type UUID } from "types/common_type";
 import { Product } from "./product.model";
 import { Transaction } from "./transaction.model";
+import { DecimalTransformer } from "utils/decimal_transformer";
 
 @Entity()
 export class TransactionDetail {
@@ -30,9 +31,13 @@ export class TransactionDetail {
   historicalCode!: string;
 
   @Column({ type: "varchar", nullable: false })
-  historyalPriceName!: string;
- 
-  @Column({ type: "varchar", nullable: false })
+  historicalPriceName!: string;
+
+  @Column({
+    type: "decimal",
+    nullable: false,
+    transformer: new DecimalTransformer(),
+  })
   historicalPrice!: number;
 
   @Column({ type: "varchar", nullable: false })

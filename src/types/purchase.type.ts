@@ -2,11 +2,15 @@ import { Schema } from "express-validator";
 import { UUID } from "./common_type";
 import { CANCELLED, PENDING, POSTED } from "@constants/status";
 
-export type CreatePurchase = {
+export type PurchaseDetailInput = {
   productId: UUID;
+  qty: number;
+};
+
+export type CreatePurchase = {
   vendorId: UUID;
   purchaseDate: Date;
-  qty: number;
+  details: PurchaseDetailInput[];
 };
 
 export type ChangeStatusPurchase = {
@@ -15,17 +19,12 @@ export type ChangeStatusPurchase = {
 };
 
 export type UpdatePurchase = {
-  productId?: UUID;
   vendorId?: UUID;
   purchaseDate?: Date;
-  qty?: number;
+  details?: PurchaseDetailInput[];
 };
 
 export const createPurchaseSchema: Schema = {
-  productId: {
-    isUUID: true,
-    notEmpty: true,
-  },
   vendorId: {
     isUUID: true,
     notEmpty: true,
@@ -34,10 +33,18 @@ export const createPurchaseSchema: Schema = {
     isISO8601: true,
     notEmpty: true,
   },
-  qty: {
-    isInt: {
+  details: {
+    isArray: {
       options: { min: 1 },
+      errorMessage: "Setidaknya harus ada satu produk pada pembelian.",
     },
+  },
+  "details.*.productId": {
+    isUUID: true,
+    notEmpty: true,
+  },
+  "details.*.qty": {
+    isInt: { options: { min: 1 } },
     notEmpty: true,
   },
 };
@@ -56,10 +63,6 @@ export const changeStatusPurchaseSchema: Schema = {
 };
 
 export const updatePurchaseSchema: Schema = {
-  productId: {
-    optional: { options: { values: "undefined" } },
-    isUUID: true,
-  },
   vendorId: {
     optional: { options: { values: "undefined" } },
     isUUID: true,
@@ -68,10 +71,16 @@ export const updatePurchaseSchema: Schema = {
     optional: { options: { values: "undefined" } },
     isISO8601: true,
   },
-  qty: {
+  details: {
     optional: { options: { values: "undefined" } },
-    isInt: {
-      options: { min: 1 },
-    },
+    isArray: { options: { min: 1 } },
+  },
+  "details.*.productId": {
+    optional: { options: { values: "undefined" } },
+    isUUID: true,
+  },
+  "details.*.qty": {
+    optional: { options: { values: "undefined" } },
+    isInt: { options: { min: 1 } },
   },
 };

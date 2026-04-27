@@ -96,6 +96,73 @@
 				],
 				"type": "object"
 			},
+			"Transaction": {
+				"properties": {
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"updatedAt": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"id": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"cashierId": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"cashier": {
+						"$ref": "#/components/schemas/User"
+					},
+					"transactionDetails": {
+						"items": {
+							"$ref": "#/components/schemas/TransactionDetail"
+						},
+						"type": "array"
+					},
+					"transactionNo": {
+						"type": "string"
+					},
+					"totalPrice": {
+						"type": "number",
+						"format": "double"
+					},
+					"totalQty": {
+						"type": "number",
+						"format": "double"
+					},
+					"status": {
+						"type": "string"
+					},
+					"paymentMethod": {
+						"type": "string"
+					},
+					"cashAmount": {
+						"type": "number",
+						"format": "double"
+					},
+					"changeAmount": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"createdAt",
+					"updatedAt",
+					"id",
+					"cashierId",
+					"transactionNo",
+					"totalPrice",
+					"totalQty",
+					"status",
+					"paymentMethod",
+					"cashAmount",
+					"changeAmount"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
 			"Product": {
 				"properties": {
 					"id": {
@@ -164,6 +231,130 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TransactionDetail": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"transactionId": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"transaction": {
+						"$ref": "#/components/schemas/Transaction"
+					},
+					"historicalName": {
+						"type": "string"
+					},
+					"historicalBarcode": {
+						"type": "string"
+					},
+					"historicalCode": {
+						"type": "string"
+					},
+					"historicalPriceName": {
+						"type": "string"
+					},
+					"historicalPrice": {
+						"type": "number",
+						"format": "double"
+					},
+					"historicalCategory": {
+						"type": "string"
+					},
+					"productId": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"product": {
+						"$ref": "#/components/schemas/Product"
+					},
+					"isRefund": {
+						"type": "boolean"
+					},
+					"refundReason": {
+						"type": "string",
+						"nullable": true
+					},
+					"qty": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"transactionId",
+					"historicalName",
+					"historicalBarcode",
+					"historicalCode",
+					"historicalPriceName",
+					"historicalPrice",
+					"historicalCategory",
+					"productId",
+					"isRefund",
+					"qty"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"TransactionDetailInput": {
+				"properties": {
+					"qty": {
+						"type": "number",
+						"format": "double"
+					},
+					"priceName": {
+						"type": "string"
+					},
+					"productId": {
+						"$ref": "#/components/schemas/UUID"
+					}
+				},
+				"required": [
+					"qty",
+					"priceName",
+					"productId"
+				],
+				"type": "object"
+			},
+			"CreateTransactionBody": {
+				"properties": {
+					"transactionDetails": {
+						"items": {
+							"$ref": "#/components/schemas/TransactionDetailInput"
+						},
+						"type": "array"
+					},
+					"cashAmount": {
+						"type": "number",
+						"format": "double"
+					},
+					"paymentMethod": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"transactionDetails",
+					"paymentMethod"
+				],
+				"type": "object"
+			},
+			"RefundTransactionBody": {
+				"properties": {
+					"reason": {
+						"type": "string"
+					},
+					"detailIds": {
+						"items": {
+							"$ref": "#/components/schemas/UUID"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"reason",
+					"detailIds"
+				],
+				"type": "object"
+			},
 			"Purchase": {
 				"properties": {
 					"createdById": {
@@ -189,12 +380,6 @@
 					"id": {
 						"$ref": "#/components/schemas/UUID"
 					},
-					"productId": {
-						"$ref": "#/components/schemas/UUID"
-					},
-					"product": {
-						"$ref": "#/components/schemas/Product"
-					},
 					"vendorId": {
 						"$ref": "#/components/schemas/UUID"
 					},
@@ -208,9 +393,11 @@
 						"type": "string",
 						"format": "date-time"
 					},
-					"qty": {
-						"type": "number",
-						"format": "double"
+					"purchaseDetails": {
+						"items": {
+							"$ref": "#/components/schemas/PurchaseDetail"
+						},
+						"type": "array"
 					}
 				},
 				"required": [
@@ -219,27 +406,49 @@
 					"updatedById",
 					"updatedAt",
 					"id",
-					"productId",
 					"vendorId",
 					"status",
-					"purchaseDate",
+					"purchaseDate"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PurchaseDetail": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"purchaseId": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"purchase": {
+						"$ref": "#/components/schemas/Purchase"
+					},
+					"productId": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"product": {
+						"$ref": "#/components/schemas/Product"
+					},
+					"qty": {
+						"type": "number",
+						"format": "double"
+					}
+				},
+				"required": [
+					"id",
+					"purchaseId",
+					"productId",
 					"qty"
 				],
 				"type": "object",
 				"additionalProperties": false
 			},
-			"CreatePurchase": {
+			"PurchaseDetailInput": {
 				"properties": {
 					"qty": {
 						"type": "number",
 						"format": "double"
-					},
-					"purchaseDate": {
-						"type": "string",
-						"format": "date-time"
-					},
-					"vendorId": {
-						"$ref": "#/components/schemas/UUID"
 					},
 					"productId": {
 						"$ref": "#/components/schemas/UUID"
@@ -247,9 +456,30 @@
 				},
 				"required": [
 					"qty",
-					"purchaseDate",
-					"vendorId",
 					"productId"
+				],
+				"type": "object"
+			},
+			"CreatePurchase": {
+				"properties": {
+					"details": {
+						"items": {
+							"$ref": "#/components/schemas/PurchaseDetailInput"
+						},
+						"type": "array"
+					},
+					"purchaseDate": {
+						"type": "string",
+						"format": "date-time"
+					},
+					"vendorId": {
+						"$ref": "#/components/schemas/UUID"
+					}
+				},
+				"required": [
+					"details",
+					"purchaseDate",
+					"vendorId"
 				],
 				"type": "object"
 			},
@@ -270,18 +500,17 @@
 			},
 			"UpdatePurchase": {
 				"properties": {
-					"qty": {
-						"type": "number",
-						"format": "double"
+					"details": {
+						"items": {
+							"$ref": "#/components/schemas/PurchaseDetailInput"
+						},
+						"type": "array"
 					},
 					"purchaseDate": {
 						"type": "string",
 						"format": "date-time"
 					},
 					"vendorId": {
-						"$ref": "#/components/schemas/UUID"
-					},
-					"productId": {
 						"$ref": "#/components/schemas/UUID"
 					}
 				},
@@ -583,6 +812,300 @@
 				}
 			}
 		},
+		"/transactions": {
+			"post": {
+				"operationId": "CreateTransaction",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Transaction"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Transactions"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateTransactionBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "SearchTransactions",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"totalPages": {
+											"type": "number",
+											"format": "double"
+										},
+										"transactions": {
+											"items": {
+												"$ref": "#/components/schemas/Transaction"
+											},
+											"type": "array"
+										}
+									},
+									"required": [
+										"totalPages",
+										"transactions"
+									],
+									"type": "object"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Transactions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "transactionNo",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "date",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/transactions/{id}": {
+			"get": {
+				"operationId": "GetTransactionById",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Transaction"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Transactions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					}
+				]
+			}
+		},
+		"/transactions/{id}/void": {
+			"put": {
+				"operationId": "VoidTransaction",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Transaction"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Transactions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					}
+				]
+			}
+		},
+		"/transactions/{id}/refund": {
+			"put": {
+				"operationId": "RefundTransaction",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Transaction"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Transactions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RefundTransactionBody"
+							}
+						}
+					}
+				}
+			}
+		},
 		"/purchases": {
 			"post": {
 				"operationId": "CreatePurchase",
@@ -640,10 +1163,23 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"items": {
-										"$ref": "#/components/schemas/Vendor"
+									"properties": {
+										"totalPages": {
+											"type": "number",
+											"format": "double"
+										},
+										"purchases": {
+											"items": {
+												"$ref": "#/components/schemas/Purchase"
+											},
+											"type": "array"
+										}
 									},
-									"type": "array"
+									"required": [
+										"totalPages",
+										"purchases"
+									],
+									"type": "object"
 								}
 							}
 						}
@@ -671,12 +1207,53 @@
 					"Purchases"
 				],
 				"security": [],
-				"parameters": []
+				"parameters": [
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "vendorId",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					},
+					{
+						"in": "query",
+						"name": "productId",
+						"required": false,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					},
+					{
+						"in": "query",
+						"name": "purchaseDate",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
 			}
 		},
-		"/purchases/change-status": {
-			"put": {
-				"operationId": "UpdateStatus",
+		"/purchases/{id}": {
+			"get": {
+				"operationId": "GetPurchaseById",
 				"responses": {
 					"200": {
 						"description": "Ok",
@@ -711,20 +1288,17 @@
 					"Purchases"
 				],
 				"security": [],
-				"parameters": [],
-				"requestBody": {
-					"required": true,
-					"content": {
-						"application/json": {
-							"schema": {
-								"$ref": "#/components/schemas/ChangeStatusPurchase"
-							}
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
 						}
 					}
-				}
-			}
-		},
-		"/purchases/{id}": {
+				]
+			},
 			"put": {
 				"operationId": "UpdatePurchase",
 				"responses": {
@@ -777,6 +1351,56 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/UpdatePurchase"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/purchases/change-status": {
+			"put": {
+				"operationId": "UpdateStatus",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Purchase"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Purchases"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ChangeStatusPurchase"
 							}
 						}
 					}
@@ -1006,6 +1630,14 @@
 					{
 						"in": "query",
 						"name": "code",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "name",
 						"required": false,
 						"schema": {
 							"type": "string"

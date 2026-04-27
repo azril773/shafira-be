@@ -83,6 +83,7 @@ export class ProductController extends Controller {
     query("page").trim().escape().isString(),
     query("barcode").trim().escape().isString().optional({values: 'undefined'}),
     query("code").trim().escape().isString().optional({values: 'undefined'}),
+    query("name").trim().escape().isString().optional({values: 'undefined'}),
   ])
   public async searchProducts(
     @Request() req: ExRequest,
@@ -90,6 +91,7 @@ export class ProductController extends Controller {
     @Query() page: string,
     @Query() barcode?: string,
     @Query() code?: string,
+    @Query() name?: string,
   ): Promise<{ products: Product[]; totalPages: number }> {
     try {
       validationResult(req);
@@ -98,6 +100,7 @@ export class ProductController extends Controller {
         page: page ? parseInt(page) : 1,
         barcode,
         code,
+        name,
       });
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type

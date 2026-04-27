@@ -8,6 +8,7 @@ import {
   Path,
   Post,
   Put,
+  Query,
   Request,
   Res,
   Route,
@@ -31,7 +32,6 @@ import {
 } from "types/purchase.type";
 import { Purchase } from "@models/purchase.model";
 import { UUID } from "types/common_type";
-import { Vendor } from "@models/vendor.model";
 
 @Route("purchases")
 @Tags("Purchases")
@@ -59,7 +59,22 @@ export class PurchaseController extends Controller {
   }
   @Get("")
   @Middlewares([
-    query("page").trim().escape().optional({ values: "undefined" }),
+    query("page")
+      .trim()
+      .escape()
+      .isInt({ min: 1 })
+      .optional({ values: "undefined" }),
+    query("status").trim().escape().optional({ values: "undefined" }),
+    query("vendorId")
+      .trim()
+      .escape()
+      .isUUID()
+      .optional({ values: "undefined" }),
+    query("productId")
+      .trim()
+      .escape()
+      .isUUID()
+      .optional({ values: "undefined" }),
     query("purchaseDate")
       .trim()
       .escape()
@@ -69,16 +84,43 @@ export class PurchaseController extends Controller {
   public async searchPurchase(
     @Request() req: ExRequest,
     @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
-    // @Query() page?: string,
-    // @Query() purchaseDate?: string,
-  ): Promise<Vendor[]> {
+    @Query() page?: string,
+    @Query() status?: string,
+    @Query() vendorId?: UUID,
+    @Query() productId?: UUID,
+    @Query() purchaseDate?: string,
+  ): Promise<{ purchases: Purchase[]; totalPages: number }> {
     try {
       validateRequest(req);
       const token = req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
-      // return await this.purchaseService.getVendors();
-      return [];
+      return await this.purchaseService.searchPurchases({
+        page: page ? parseInt(page, 10) : 1,
+        status,
+        vendorId,
+        productId,
+        purchaseDate,
+      });
+    } catch (error) {
+      // @ts-expect-error TsoaResponse any return type
+      return handleControllerError(error, { defaultErrorResponse });
+    }
+  }
+
+  @Get("{id}")
+  @Middlewares([param("id").trim().escape().isUUID()])
+  public async getPurchaseById(
+    @Path() id: UUID,
+    @Request() req: ExRequest,
+    @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
+  ): Promise<Purchase> {
+    try {
+      validateRequest(req);
+      const token = req.cookies.access_token;
+      const user = await this.authService.getUserByToken(token as string);
+      if (!user) throw new UnauthorizedError("user tidak ada");
+      return await this.purchaseService.getPurchaseById(id);
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type
       return handleControllerError(error, { defaultErrorResponse });

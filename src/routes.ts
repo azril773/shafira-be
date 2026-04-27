@@ -57,6 +57,26 @@ const models: TsoaRoute.Models = {
         "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"phone":{"dataType":"string","required":true},"name":{"dataType":"string","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "Transaction": {
+        "dataType": "refObject",
+        "properties": {
+            "createdAt": {"dataType":"datetime","required":true},
+            "updatedAt": {"dataType":"datetime","required":true},
+            "id": {"ref":"UUID","required":true},
+            "cashierId": {"ref":"UUID","required":true},
+            "cashier": {"ref":"User"},
+            "transactionDetails": {"dataType":"array","array":{"dataType":"refObject","ref":"TransactionDetail"}},
+            "transactionNo": {"dataType":"string","required":true},
+            "totalPrice": {"dataType":"double","required":true},
+            "totalQty": {"dataType":"double","required":true},
+            "status": {"dataType":"string","required":true},
+            "paymentMethod": {"dataType":"string","required":true},
+            "cashAmount": {"dataType":"double","required":true},
+            "changeAmount": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Product": {
         "dataType": "refObject",
         "properties": {
@@ -83,6 +103,42 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TransactionDetail": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"UUID","required":true},
+            "transactionId": {"ref":"UUID","required":true},
+            "transaction": {"ref":"Transaction"},
+            "historicalName": {"dataType":"string","required":true},
+            "historicalBarcode": {"dataType":"string","required":true},
+            "historicalCode": {"dataType":"string","required":true},
+            "historicalPriceName": {"dataType":"string","required":true},
+            "historicalPrice": {"dataType":"double","required":true},
+            "historicalCategory": {"dataType":"string","required":true},
+            "productId": {"ref":"UUID","required":true},
+            "product": {"ref":"Product"},
+            "isRefund": {"dataType":"boolean","required":true},
+            "refundReason": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}]},
+            "qty": {"dataType":"double","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "TransactionDetailInput": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"qty":{"dataType":"double","required":true},"priceName":{"dataType":"string","required":true},"productId":{"ref":"UUID","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CreateTransactionBody": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"transactionDetails":{"dataType":"array","array":{"dataType":"refAlias","ref":"TransactionDetailInput"},"required":true},"cashAmount":{"dataType":"double"},"paymentMethod":{"dataType":"string","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RefundTransactionBody": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"reason":{"dataType":"string","required":true},"detailIds":{"dataType":"array","array":{"dataType":"refAlias","ref":"UUID"},"required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Purchase": {
         "dataType": "refObject",
         "properties": {
@@ -93,20 +149,36 @@ const models: TsoaRoute.Models = {
             "updatedBy": {"ref":"User"},
             "updatedAt": {"dataType":"datetime","required":true},
             "id": {"ref":"UUID","required":true},
-            "productId": {"ref":"UUID","required":true},
-            "product": {"ref":"Product"},
             "vendorId": {"ref":"UUID","required":true},
             "vendor": {"ref":"Vendor"},
             "status": {"dataType":"string","required":true},
             "purchaseDate": {"dataType":"datetime","required":true},
+            "purchaseDetails": {"dataType":"array","array":{"dataType":"refObject","ref":"PurchaseDetail"}},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PurchaseDetail": {
+        "dataType": "refObject",
+        "properties": {
+            "id": {"ref":"UUID","required":true},
+            "purchaseId": {"ref":"UUID","required":true},
+            "purchase": {"ref":"Purchase"},
+            "productId": {"ref":"UUID","required":true},
+            "product": {"ref":"Product"},
             "qty": {"dataType":"double","required":true},
         },
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "PurchaseDetailInput": {
+        "dataType": "refAlias",
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"qty":{"dataType":"double","required":true},"productId":{"ref":"UUID","required":true}},"validators":{}},
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CreatePurchase": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"qty":{"dataType":"double","required":true},"purchaseDate":{"dataType":"datetime","required":true},"vendorId":{"ref":"UUID","required":true},"productId":{"ref":"UUID","required":true}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"details":{"dataType":"array","array":{"dataType":"refAlias","ref":"PurchaseDetailInput"},"required":true},"purchaseDate":{"dataType":"datetime","required":true},"vendorId":{"ref":"UUID","required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ChangeStatusPurchase": {
@@ -116,7 +188,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UpdatePurchase": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"qty":{"dataType":"double"},"purchaseDate":{"dataType":"datetime"},"vendorId":{"ref":"UUID"},"productId":{"ref":"UUID"}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"details":{"dataType":"array","array":{"dataType":"refAlias","ref":"PurchaseDetailInput"}},"purchaseDate":{"dataType":"datetime"},"vendorId":{"ref":"UUID"}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Price": {
@@ -281,6 +353,170 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTransactionController_createTransaction: Record<string, TsoaRoute.ParameterSchema> = {
+                body: {"in":"body","name":"body","required":true,"ref":"CreateTransactionBody"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+                defaultErrorResponse: {"in":"res","name":"500","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"message":{"dataType":"string","required":true}}},
+        };
+        app.post('/transactions',
+            ...(fetchMiddlewares<RequestHandler>(TransactionController)),
+            ...(fetchMiddlewares<RequestHandler>(TransactionController.prototype.createTransaction)),
+
+            async function TransactionController_createTransaction(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTransactionController_createTransaction, request, response });
+
+                const controller = new TransactionController();
+
+              await templateService.apiHandler({
+                methodName: 'createTransaction',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTransactionController_searchTransactions: Record<string, TsoaRoute.ParameterSchema> = {
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+                defaultErrorResponse: {"in":"res","name":"500","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"message":{"dataType":"string","required":true}}},
+                page: {"in":"query","name":"page","dataType":"string"},
+                status: {"in":"query","name":"status","dataType":"string"},
+                transactionNo: {"in":"query","name":"transactionNo","dataType":"string"},
+                date: {"in":"query","name":"date","dataType":"string"},
+        };
+        app.get('/transactions',
+            ...(fetchMiddlewares<RequestHandler>(TransactionController)),
+            ...(fetchMiddlewares<RequestHandler>(TransactionController.prototype.searchTransactions)),
+
+            async function TransactionController_searchTransactions(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTransactionController_searchTransactions, request, response });
+
+                const controller = new TransactionController();
+
+              await templateService.apiHandler({
+                methodName: 'searchTransactions',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTransactionController_getTransactionById: Record<string, TsoaRoute.ParameterSchema> = {
+                id: {"in":"path","name":"id","required":true,"ref":"UUID"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+                defaultErrorResponse: {"in":"res","name":"500","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"message":{"dataType":"string","required":true}}},
+        };
+        app.get('/transactions/:id',
+            ...(fetchMiddlewares<RequestHandler>(TransactionController)),
+            ...(fetchMiddlewares<RequestHandler>(TransactionController.prototype.getTransactionById)),
+
+            async function TransactionController_getTransactionById(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTransactionController_getTransactionById, request, response });
+
+                const controller = new TransactionController();
+
+              await templateService.apiHandler({
+                methodName: 'getTransactionById',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTransactionController_voidTransaction: Record<string, TsoaRoute.ParameterSchema> = {
+                id: {"in":"path","name":"id","required":true,"ref":"UUID"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+                defaultErrorResponse: {"in":"res","name":"500","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"message":{"dataType":"string","required":true}}},
+        };
+        app.put('/transactions/:id/void',
+            ...(fetchMiddlewares<RequestHandler>(TransactionController)),
+            ...(fetchMiddlewares<RequestHandler>(TransactionController.prototype.voidTransaction)),
+
+            async function TransactionController_voidTransaction(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTransactionController_voidTransaction, request, response });
+
+                const controller = new TransactionController();
+
+              await templateService.apiHandler({
+                methodName: 'voidTransaction',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsTransactionController_refundTransaction: Record<string, TsoaRoute.ParameterSchema> = {
+                id: {"in":"path","name":"id","required":true,"ref":"UUID"},
+                body: {"in":"body","name":"body","required":true,"ref":"RefundTransactionBody"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+                defaultErrorResponse: {"in":"res","name":"500","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"message":{"dataType":"string","required":true}}},
+        };
+        app.put('/transactions/:id/refund',
+            ...(fetchMiddlewares<RequestHandler>(TransactionController)),
+            ...(fetchMiddlewares<RequestHandler>(TransactionController.prototype.refundTransaction)),
+
+            async function TransactionController_refundTransaction(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsTransactionController_refundTransaction, request, response });
+
+                const controller = new TransactionController();
+
+              await templateService.apiHandler({
+                methodName: 'refundTransaction',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsPurchaseController_createPurchase: Record<string, TsoaRoute.ParameterSchema> = {
                 body: {"in":"body","name":"body","required":true,"ref":"CreatePurchase"},
                 req: {"in":"request","name":"req","required":true,"dataType":"object"},
@@ -316,6 +552,11 @@ export function RegisterRoutes(app: Router) {
         const argsPurchaseController_searchPurchase: Record<string, TsoaRoute.ParameterSchema> = {
                 req: {"in":"request","name":"req","required":true,"dataType":"object"},
                 defaultErrorResponse: {"in":"res","name":"500","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"message":{"dataType":"string","required":true}}},
+                page: {"in":"query","name":"page","dataType":"string"},
+                status: {"in":"query","name":"status","dataType":"string"},
+                vendorId: {"in":"query","name":"vendorId","ref":"UUID"},
+                productId: {"in":"query","name":"productId","ref":"UUID"},
+                purchaseDate: {"in":"query","name":"purchaseDate","dataType":"string"},
         };
         app.get('/purchases',
             ...(fetchMiddlewares<RequestHandler>(PurchaseController)),
@@ -333,6 +574,38 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'searchPurchase',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsPurchaseController_getPurchaseById: Record<string, TsoaRoute.ParameterSchema> = {
+                id: {"in":"path","name":"id","required":true,"ref":"UUID"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+                defaultErrorResponse: {"in":"res","name":"500","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"message":{"dataType":"string","required":true}}},
+        };
+        app.get('/purchases/:id',
+            ...(fetchMiddlewares<RequestHandler>(PurchaseController)),
+            ...(fetchMiddlewares<RequestHandler>(PurchaseController.prototype.getPurchaseById)),
+
+            async function PurchaseController_getPurchaseById(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsPurchaseController_getPurchaseById, request, response });
+
+                const controller = new PurchaseController();
+
+              await templateService.apiHandler({
+                methodName: 'getPurchaseById',
                 controller,
                 response,
                 next,
@@ -511,6 +784,7 @@ export function RegisterRoutes(app: Router) {
                 page: {"in":"query","name":"page","required":true,"dataType":"string"},
                 barcode: {"in":"query","name":"barcode","dataType":"string"},
                 code: {"in":"query","name":"code","dataType":"string"},
+                name: {"in":"query","name":"name","dataType":"string"},
         };
         app.get('/products/search',
             ...(fetchMiddlewares<RequestHandler>(ProductController)),

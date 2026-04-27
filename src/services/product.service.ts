@@ -114,20 +114,27 @@ export class ProductService {
     page,
     barcode,
     code,
+    name,
   }: {
     page: number;
     barcode?: string;
     code?: string;
+    name?: string;
   }): Promise<{ products: Product[]; totalPages: number }> {
     const limit = 10;
     const offset = (page - 1) * limit;
     const queryBuilder = this.productRepository.createQueryBuilder("product");
     queryBuilder.leftJoinAndSelect("product.prices", "prices");
     if (barcode) {
-      queryBuilder.where("product.barcode = :barcode", { barcode });
+      queryBuilder.andWhere("product.barcode = :barcode", { barcode });
     }
     if (code) {
       queryBuilder.andWhere("product.code = :code", { code });
+    }
+    if (name) {
+      queryBuilder.andWhere("LOWER(product.name) LIKE :name", {
+        name: `%${name.toLowerCase()}%`,
+      });
     }
     queryBuilder.skip(offset).take(limit);
     const [products, total] = await queryBuilder.getManyAndCount();
