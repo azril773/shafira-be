@@ -1,4 +1,5 @@
 import { Schema } from "express-validator";
+import { UUID } from "./common_type";
 
 export const productSchema: Schema = {
   name: {
@@ -23,6 +24,10 @@ export const productSchema: Schema = {
     trim: true,
     notEmpty: true,
   },
+  uomId: {
+    optional: { options: { values: "null" } },
+    isUUID: true,
+  },
   "prices.*.price": {
     isInt: { options: { min: 0 } },
   },
@@ -39,6 +44,7 @@ export type ProductBody = {
   prices: Price[];
   category: string;
   barcode: string;
+  uomId?: UUID | null;
 };
 
 export type Price = {

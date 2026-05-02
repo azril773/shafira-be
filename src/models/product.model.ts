@@ -1,6 +1,7 @@
 import { UUID } from "types/common_type";
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { PriceProduct } from "./price.model";
+import { Uom } from "./uom.model";
 
 @Entity()
 export class Product {
@@ -24,4 +25,10 @@ export class Product {
 
   @Column({ type: "integer", nullable: false, default: 0 })
   stock!: number;
+
+  @Column({ type: "uuid", nullable: true })
+  uomId?: UUID | null;
+  @JoinColumn({ name: "uomId" })
+  @ManyToOne(() => Uom, { nullable: true })
+  uom?: Uom | null;
 }

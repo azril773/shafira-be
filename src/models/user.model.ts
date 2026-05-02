@@ -9,9 +9,15 @@ export class User {
   @Column({ type: "varchar", unique: true, nullable: false })
   username!: string;
 
+  @Column({ type: "varchar", nullable: true })
+  name?: string | null;
+
   @Column({ type: "varchar", nullable: false })
   password!: string;
 
   @Column({ type: "varchar", nullable: false })
   role!: string;
+
+  @Column({ type: "varchar", nullable: false, default: "PENDING" })
+  status!: string;
 }

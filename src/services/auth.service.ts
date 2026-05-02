@@ -17,6 +17,14 @@ export class AuthService {
       throw new Error("User not found");
     }
 
+    if (user.status && user.status !== "APPROVED") {
+      throw new Error(
+        user.status === "PENDING"
+          ? "Akun belum diverifikasi admin"
+          : "Akun ditolak",
+      );
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) throw new Error("Invalid password");
 
@@ -52,7 +60,7 @@ export class AuthService {
     if (!user) {
       throw new Error("User not found");
     }
-    if (user.role !== "admin") {
+    if (user.role !== "admin" && user.role !== "verif_admin") {
       throw new Error("User is not an admin");
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);

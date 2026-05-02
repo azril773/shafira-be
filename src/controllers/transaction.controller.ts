@@ -130,7 +130,7 @@ export class TransactionController extends Controller {
       const token = req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
-      return await this.transactionService.voidTransaction(id);
+      return await this.transactionService.voidTransaction(id, user);
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type
       return handleControllerError(error, { defaultErrorResponse });
@@ -153,7 +153,7 @@ export class TransactionController extends Controller {
       const token = req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
-      return await this.transactionService.refundTransaction(id, body);
+      return await this.transactionService.refundTransaction(id, body, user);
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type
       return handleControllerError(error, { defaultErrorResponse });

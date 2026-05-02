@@ -21,10 +21,17 @@
 					"username": {
 						"type": "string"
 					},
+					"name": {
+						"type": "string",
+						"nullable": true
+					},
 					"password": {
 						"type": "string"
 					},
 					"role": {
+						"type": "string"
+					},
+					"status": {
 						"type": "string"
 					}
 				},
@@ -32,7 +39,8 @@
 					"id",
 					"username",
 					"password",
-					"role"
+					"role",
+					"status"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -93,6 +101,132 @@
 				"required": [
 					"phone",
 					"name"
+				],
+				"type": "object"
+			},
+			"CreateUserBody": {
+				"properties": {
+					"role": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"password": {
+						"type": "string"
+					},
+					"username": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"role",
+					"password",
+					"username"
+				],
+				"type": "object"
+			},
+			"RegisterUserBody": {
+				"properties": {
+					"role": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"password": {
+						"type": "string"
+					},
+					"username": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"role",
+					"password",
+					"username"
+				],
+				"type": "object"
+			},
+			"UpdateUserBody": {
+				"properties": {
+					"password": {
+						"type": "string"
+					},
+					"status": {
+						"type": "string"
+					},
+					"role": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					}
+				},
+				"type": "object"
+			},
+			"ApproveUserBody": {
+				"properties": {
+					"approve": {
+						"type": "boolean"
+					},
+					"verifierPassword": {
+						"type": "string"
+					},
+					"verifierUsername": {
+						"type": "string"
+					},
+					"role": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"approve",
+					"verifierPassword",
+					"verifierUsername"
+				],
+				"type": "object"
+			},
+			"Uom": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"code": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"description": {
+						"type": "string",
+						"nullable": true
+					}
+				},
+				"required": [
+					"id",
+					"code",
+					"name"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"UomBody": {
+				"properties": {
+					"description": {
+						"type": "string",
+						"nullable": true
+					},
+					"name": {
+						"type": "string"
+					},
+					"code": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"name",
+					"code"
 				],
 				"type": "object"
 			},
@@ -189,6 +323,22 @@
 					"stock": {
 						"type": "number",
 						"format": "double"
+					},
+					"uomId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/UUID"
+							}
+						],
+						"nullable": true
+					},
+					"uom": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uom"
+							}
+						],
+						"nullable": true
 					}
 				},
 				"required": [
@@ -267,6 +417,30 @@
 					"product": {
 						"$ref": "#/components/schemas/Product"
 					},
+					"uomId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/UUID"
+							}
+						],
+						"nullable": true
+					},
+					"uom": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/Uom"
+							}
+						],
+						"nullable": true
+					},
+					"historicalUomCode": {
+						"type": "string",
+						"nullable": true
+					},
+					"historicalUomName": {
+						"type": "string",
+						"nullable": true
+					},
 					"isRefund": {
 						"type": "boolean"
 					},
@@ -297,6 +471,14 @@
 			},
 			"TransactionDetailInput": {
 				"properties": {
+					"uomId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/UUID"
+							}
+						],
+						"nullable": true
+					},
 					"qty": {
 						"type": "number",
 						"format": "double"
@@ -433,19 +615,28 @@
 					"qty": {
 						"type": "number",
 						"format": "double"
+					},
+					"purchasePrice": {
+						"type": "number",
+						"format": "double"
 					}
 				},
 				"required": [
 					"id",
 					"purchaseId",
 					"productId",
-					"qty"
+					"qty",
+					"purchasePrice"
 				],
 				"type": "object",
 				"additionalProperties": false
 			},
 			"PurchaseDetailInput": {
 				"properties": {
+					"purchasePrice": {
+						"type": "number",
+						"format": "double"
+					},
 					"qty": {
 						"type": "number",
 						"format": "double"
@@ -455,6 +646,7 @@
 					}
 				},
 				"required": [
+					"purchasePrice",
 					"qty",
 					"productId"
 				],
@@ -534,6 +726,14 @@
 			},
 			"ProductBody": {
 				"properties": {
+					"uomId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/UUID"
+							}
+						],
+						"nullable": true
+					},
 					"barcode": {
 						"type": "string"
 					},
@@ -570,6 +770,101 @@
 				"required": [
 					"password",
 					"username"
+				],
+				"type": "object"
+			},
+			"AuditLog": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"action": {
+						"type": "string"
+					},
+					"actorId": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"actor": {
+						"$ref": "#/components/schemas/User"
+					},
+					"verifiedById": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/UUID"
+							}
+						],
+						"nullable": true
+					},
+					"verifiedBy": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/User"
+							}
+						],
+						"nullable": true
+					},
+					"entityType": {
+						"type": "string",
+						"nullable": true
+					},
+					"entityId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/UUID"
+							}
+						],
+						"nullable": true
+					},
+					"reason": {
+						"type": "string",
+						"nullable": true
+					},
+					"payload": {},
+					"createdAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"action",
+					"actorId",
+					"createdAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateAuditLogBody": {
+				"properties": {
+					"payload": {},
+					"reason": {
+						"type": "string",
+						"nullable": true
+					},
+					"entityId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/UUID"
+							}
+						],
+						"nullable": true
+					},
+					"entityType": {
+						"type": "string",
+						"nullable": true
+					},
+					"verifierPassword": {
+						"type": "string"
+					},
+					"verifierUsername": {
+						"type": "string"
+					},
+					"action": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"action"
 				],
 				"type": "object"
 			}
@@ -810,6 +1105,573 @@
 						}
 					}
 				}
+			}
+		},
+		"/users": {
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"totalPages": {
+											"type": "number",
+											"format": "double"
+										},
+										"users": {
+											"items": {
+												"$ref": "#/components/schemas/User"
+											},
+											"type": "array"
+										}
+									},
+									"required": [
+										"totalPages",
+										"users"
+									],
+									"type": "object"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"User"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "status",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "role",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "search",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			},
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/User"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"User"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateUserBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/register": {
+			"post": {
+				"operationId": "Register",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/User"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"User"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/RegisterUserBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/users/{id}": {
+			"put": {
+				"operationId": "Update",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/User"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"User"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UpdateUserBody"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "Remove",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"ok": {
+											"type": "boolean"
+										}
+									},
+									"required": [
+										"ok"
+									],
+									"type": "object"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"User"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					}
+				]
+			}
+		},
+		"/users/{id}/approve": {
+			"post": {
+				"operationId": "Approve",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/User"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"User"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ApproveUserBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/uoms": {
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/Uom"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Uoms"
+				],
+				"security": [],
+				"parameters": []
+			},
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Uom"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Uoms"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UomBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/uoms/{id}": {
+			"put": {
+				"operationId": "Update",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Uom"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Uoms"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/UomBody"
+							}
+						}
+					}
+				}
+			},
+			"delete": {
+				"operationId": "Remove",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Uoms"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					}
+				]
 			}
 		},
 		"/transactions": {
@@ -1772,6 +2634,129 @@
 						}
 					}
 				}
+			}
+		},
+		"/audit-logs": {
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/AuditLog"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"AuditLog"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateAuditLogBody"
+							}
+						}
+					}
+				}
+			},
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"totalPages": {
+											"type": "number",
+											"format": "double"
+										},
+										"logs": {
+											"items": {
+												"$ref": "#/components/schemas/AuditLog"
+											},
+											"type": "array"
+										}
+									},
+									"required": [
+										"totalPages",
+										"logs"
+									],
+									"type": "object"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"AuditLog"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "page",
+						"required": false,
+						"schema": {
+							"default": 1,
+							"format": "double",
+							"type": "number"
+						}
+					},
+					{
+						"in": "query",
+						"name": "action",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
 			}
 		}
 	},

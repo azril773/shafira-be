@@ -10,7 +10,7 @@ export class ProductService {
   private priceRepository = dataSource.getRepository(PriceProduct);
 
   public async getProducts(): Promise<Product[]> {
-    return await this.productRepository.find({ relations: { prices: true } });
+    return await this.productRepository.find({ relations: { prices: true, uom: true } });
   }
 
   public async createProduct(body: ProductBody): Promise<Product> {
@@ -56,6 +56,7 @@ export class ProductService {
     product.category = body.category;
     product.barcode = body.barcode;
     product.code = code;
+    product.uomId = body.uomId ?? null;
     return await this.productRepository.save(product);
   }
 
@@ -83,6 +84,7 @@ export class ProductService {
     product.name = body.name ?? product.name;
     product.category = body.category ?? product.category;
     product.barcode = body.barcode ?? product.barcode;
+    if (body.uomId !== undefined) product.uomId = body.uomId;
 
     const existingPrices = product.prices;
     const newPrices: PriceProduct[] = [];
@@ -125,6 +127,7 @@ export class ProductService {
     const offset = (page - 1) * limit;
     const queryBuilder = this.productRepository.createQueryBuilder("product");
     queryBuilder.leftJoinAndSelect("product.prices", "prices");
+    queryBuilder.leftJoinAndSelect("product.uom", "uom");
     if (barcode) {
       queryBuilder.andWhere("product.barcode = :barcode", { barcode });
     }

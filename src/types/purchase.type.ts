@@ -5,6 +5,7 @@ import { CANCELLED, PENDING, POSTED } from "@constants/status";
 export type PurchaseDetailInput = {
   productId: UUID;
   qty: number;
+  purchasePrice: number;
 };
 
 export type CreatePurchase = {
@@ -47,6 +48,10 @@ export const createPurchaseSchema: Schema = {
     isInt: { options: { min: 1 } },
     notEmpty: true,
   },
+  "details.*.purchasePrice": {
+    isFloat: { options: { min: 0 } },
+    notEmpty: true,
+  },
 };
 
 export const changeStatusPurchaseSchema: Schema = {
@@ -82,5 +87,9 @@ export const updatePurchaseSchema: Schema = {
   "details.*.qty": {
     optional: { options: { values: "undefined" } },
     isInt: { options: { min: 1 } },
+  },
+  "details.*.purchasePrice": {
+    optional: { options: { values: "undefined" } },
+    isFloat: { options: { min: 0 } },
   },
 };

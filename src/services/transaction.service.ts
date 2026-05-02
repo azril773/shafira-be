@@ -1,7 +1,9 @@
 import dataSource from "@config/database";
+import { AuditLog } from "@models/audit_log.model";
 import { Product } from "@models/product.model";
 import { Transaction } from "@models/transaction.model";
 import { TransactionDetail } from "@models/transaction_detail.model";
+import { Uom } from "@models/uom.model";
 import { User } from "@models/user.model";
 import {
   CreateTransactionBody,
@@ -29,7 +31,7 @@ export class TransactionService {
       );
       const products = await manager.find(Product, {
         where: { id: In(productIds) },
-        relations: { prices: true },
+        relations: { prices: true, uom: true },
       });
 
       const aggregatedQty = new Map<string, number>();
@@ -63,6 +65,18 @@ export class TransactionService {
       let totalPrice = 0;
       let totalQty = 0;
 
+      const uomIds = Array.from(
+        new Set(
+          body.transactionDetails
+            .map((d) => d.uomId)
+            .filter((u): u is string => !!u),
+        ),
+      );
+      const uomList = uomIds.length
+        ? await manager.find(Uom, { where: { id: In(uomIds) } })
+        : [];
+      const uomMap = new Map(uomList.map((u) => [u.id, u]));
+
       for (const d of body.transactionDetails) {
         const product = products.find((p) => p.id === d.productId)!;
         const priceOption = product.prices?.find(
@@ -74,6 +88,11 @@ export class TransactionService {
           );
         }
 
+        const resolvedUomId = d.uomId ?? product.uomId ?? null;
+        const resolvedUom = resolvedUomId
+          ? (uomMap.get(resolvedUomId) ?? product.uom ?? null)
+          : (product.uom ?? null);
+
         const detail = new TransactionDetail();
         detail.transactionId = savedTransaction.id;
         detail.productId = product.id;
@@ -83,6 +102,9 @@ export class TransactionService {
         detail.historicalCategory = product.category;
         detail.historicalPriceName = priceOption.name;
         detail.historicalPrice = Number(priceOption.price);
+        detail.uomId = resolvedUomId;
+        detail.historicalUomCode = resolvedUom?.code ?? null;
+        detail.historicalUomName = resolvedUom?.name ?? null;
         detail.qty = d.qty;
         detail.isRefund = false;
         details.push(detail);
@@ -173,7 +195,11 @@ export class TransactionService {
     return { transactions, totalPages: Math.ceil(total / limit) };
   }
 
-  public async voidTransaction(id: UUID): Promise<Transaction> {
+  public async voidTransaction(
+    id: UUID,
+    user: User,
+    reason?: string,
+  ): Promise<Transaction> {
     return await dataSource.transaction(async (manager) => {
       const trx = await manager.findOne(Transaction, {
         where: { id },
@@ -199,13 +225,25 @@ export class TransactionService {
       await manager.save(Array.from(productMap.values()));
 
       trx.status = TRX_VOIDED;
-      return await manager.save(trx);
+      const saved = await manager.save(trx);
+
+      const log = new AuditLog();
+      log.action = "VOID_TRX";
+      log.actorId = user.id;
+      log.entityType = "Transaction";
+      log.entityId = trx.id;
+      log.reason = reason ?? null;
+      log.payload = { transactionNo: trx.transactionNo, totalPrice: trx.totalPrice };
+      await manager.save(log);
+
+      return saved;
     });
   }
 
   public async refundTransaction(
     id: UUID,
     body: RefundTransactionBody,
+    user: User,
   ): Promise<Transaction> {
     return await dataSource.transaction(async (manager) => {
       const trx = await manager.findOne(Transaction, {
@@ -253,6 +291,20 @@ export class TransactionService {
       );
       if (allRefunded) trx.status = TRX_REFUNDED;
       await manager.save(trx);
+
+      const log = new AuditLog();
+      log.action = "REFUND_TRX";
+      log.actorId = user.id;
+      log.entityType = "Transaction";
+      log.entityId = trx.id;
+      log.reason = body.reason ?? null;
+      log.payload = {
+        transactionNo: trx.transactionNo,
+        refundedAmount,
+        refundedQty,
+        detailIds: body.detailIds,
+      };
+      await manager.save(log);
 
       return await manager.findOneOrFail(Transaction, {
         where: { id: trx.id },

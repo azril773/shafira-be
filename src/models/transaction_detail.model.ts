@@ -9,6 +9,7 @@ import { type UUID } from "types/common_type";
 import { Product } from "./product.model";
 import { Transaction } from "./transaction.model";
 import { DecimalTransformer } from "utils/decimal_transformer";
+import { Uom } from "./uom.model";
 
 @Entity()
 export class TransactionDetail {
@@ -49,6 +50,18 @@ export class TransactionDetail {
   @JoinColumn({ name: "productId" })
   @ManyToOne(() => Product)
   product?: Product;
+
+  @Column({ type: "uuid", nullable: true })
+  uomId?: UUID | null;
+  @JoinColumn({ name: "uomId" })
+  @ManyToOne(() => Uom, { nullable: true })
+  uom?: Uom | null;
+
+  @Column({ type: "varchar", nullable: true })
+  historicalUomCode?: string | null;
+
+  @Column({ type: "varchar", nullable: true })
+  historicalUomName?: string | null;
 
   @Column({ type: "boolean", nullable: false, default: false })
   isRefund!: boolean;

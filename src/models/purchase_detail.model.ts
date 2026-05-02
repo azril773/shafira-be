@@ -8,6 +8,7 @@ import {
 import { UUID } from "types/common_type";
 import { Product } from "./product.model";
 import { Purchase } from "./purchase.model";
+import { DecimalTransformer } from "utils/decimal_transformer";
 
 @Entity()
 export class PurchaseDetail {
@@ -30,4 +31,12 @@ export class PurchaseDetail {
 
   @Column({ type: "integer", nullable: false })
   qty!: number;
+
+  @Column({
+    type: "decimal",
+    nullable: false,
+    default: 0,
+    transformer: new DecimalTransformer(),
+  })
+  purchasePrice!: number;
 }

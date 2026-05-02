@@ -53,6 +53,7 @@ export class PurchaseService {
         detail.purchaseId = savedPurchase.id;
         detail.productId = d.productId;
         detail.qty = d.qty;
+        detail.purchasePrice = Number(d.purchasePrice ?? 0);
         return detail;
       });
       savedPurchase.purchaseDetails = await manager.save(newDetails);
@@ -235,6 +236,7 @@ export class PurchaseService {
           detail.purchaseId = savedPurchase.id;
           detail.productId = d.productId;
           detail.qty = d.qty;
+          detail.purchasePrice = Number(d.purchasePrice ?? 0);
           return detail;
         });
         savedPurchase.purchaseDetails = await manager.save(newDetails);
