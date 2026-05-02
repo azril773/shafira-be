@@ -8,9 +8,27 @@ import { User } from "@models/user.model";
 import {
   CreateTransactionBody,
   RefundTransactionBody,
+  VoidTransactionBody,
 } from "types/transaction_type";
-import { In } from "typeorm";
+import { EntityManager, In } from "typeorm";
 import { UUID } from "types/common_type";
+import bcrypt from "bcrypt";
+import { ADMIN, VERIF_ADMIN } from "@constants/user";
+
+async function resolveVerifier(
+  manager: EntityManager,
+  username?: string,
+  password?: string,
+): Promise<UUID | null> {
+  if (!username || !password) return null;
+  const verifier = await manager.findOne(User, { where: { username } });
+  if (!verifier) throw new Error("Verifier tidak ditemukan");
+  if (verifier.role !== ADMIN && verifier.role !== VERIF_ADMIN)
+    throw new Error("Verifier bukan admin");
+  const ok = await bcrypt.compare(password, verifier.password);
+  if (!ok) throw new Error("Password verifier salah");
+  return verifier.id;
+}
 
 export const TRX_POSTED = "POSTED";
 export const TRX_VOIDED = "VOIDED";
@@ -198,7 +216,7 @@ export class TransactionService {
   public async voidTransaction(
     id: UUID,
     user: User,
-    reason?: string,
+    body?: VoidTransactionBody,
   ): Promise<Transaction> {
     return await dataSource.transaction(async (manager) => {
       const trx = await manager.findOne(Transaction, {
@@ -210,6 +228,12 @@ export class TransactionService {
         throw new Error("Hanya transaksi POSTED yang dapat dibatalkan.");
       }
 
+      const verifiedById = await resolveVerifier(
+        manager,
+        body?.verifierUsername,
+        body?.verifierPassword,
+      );
+
       const details = trx.transactionDetails ?? [];
       const productIds = details.map((d) => d.productId);
       const products = await manager.find(Product, {
@@ -217,10 +241,12 @@ export class TransactionService {
       });
       const productMap = new Map(products.map((p) => [p.id, p]));
 
+      let restoredQty = 0;
       for (const detail of details) {
         if (detail.isRefund) continue;
         const product = productMap.get(detail.productId);
         if (product) product.stock += detail.qty;
+        restoredQty += detail.qty;
       }
       await manager.save(Array.from(productMap.values()));
 
@@ -230,10 +256,15 @@ export class TransactionService {
       const log = new AuditLog();
       log.action = "VOID_TRX";
       log.actorId = user.id;
+      log.verifiedById = verifiedById;
       log.entityType = "Transaction";
       log.entityId = trx.id;
-      log.reason = reason ?? null;
-      log.payload = { transactionNo: trx.transactionNo, totalPrice: trx.totalPrice };
+      log.reason = body?.reason ?? null;
+      log.payload = {
+        transactionNo: trx.transactionNo,
+        totalPrice: trx.totalPrice,
+        totalQty: restoredQty,
+      };
       await manager.save(log);
 
       return saved;
@@ -255,16 +286,42 @@ export class TransactionService {
         throw new Error("Transaksi sudah dibatalkan.");
       }
 
+      const verifiedById = await resolveVerifier(
+        manager,
+        body.verifierUsername,
+        body.verifierPassword,
+      );
+
       const details = trx.transactionDetails ?? [];
-      const targets = details.filter((d) => body.detailIds.includes(d.id));
-      if (targets.length !== body.detailIds.length) {
-        throw new Error("Beberapa item retur tidak ditemukan pada transaksi.");
-      }
-      if (targets.some((d) => d.isRefund)) {
-        throw new Error("Beberapa item sudah pernah diretur.");
+      const detailMap = new Map(details.map((d) => [d.id, d]));
+
+      // Aggregate per detailId in case the client sent duplicates
+      const requestedQty = new Map<string, number>();
+      for (const item of body.items) {
+        requestedQty.set(
+          item.detailId,
+          (requestedQty.get(item.detailId) ?? 0) + item.qty,
+        );
       }
 
-      const productIds = targets.map((d) => d.productId);
+      // Validate
+      for (const [detailId, qty] of requestedQty) {
+        const detail = detailMap.get(detailId);
+        if (!detail) throw new Error("Item retur tidak ditemukan pada transaksi.");
+        if (detail.isRefund)
+          throw new Error("Beberapa item sudah pernah diretur.");
+        if (qty < 1) throw new Error("Qty retur harus minimal 1.");
+        if (qty > detail.qty)
+          throw new Error(
+            `Qty retur untuk produk ${detail.historicalName} melebihi qty pada transaksi.`,
+          );
+      }
+
+      const productIds = Array.from(
+        new Set(
+          Array.from(requestedQty.keys()).map((did) => detailMap.get(did)!.productId),
+        ),
+      );
       const products = await manager.find(Product, {
         where: { id: In(productIds) },
       });
@@ -272,29 +329,101 @@ export class TransactionService {
 
       let refundedAmount = 0;
       let refundedQty = 0;
-      for (const detail of targets) {
-        detail.isRefund = true;
-        detail.refundReason = body.reason;
+      const refundedItems: Array<{
+        detailId: string;
+        productId: string;
+        name: string;
+        barcode: string;
+        priceName: string;
+        qty: number;
+        price: number;
+      }> = [];
+      const toSave: TransactionDetail[] = [];
+
+      for (const [detailId, qty] of requestedQty) {
+        const detail = detailMap.get(detailId)!;
         const product = productMap.get(detail.productId);
-        if (product) product.stock += detail.qty;
-        refundedAmount += Number(detail.historicalPrice) * detail.qty;
-        refundedQty += detail.qty;
+        if (product) product.stock += qty;
+
+        const lineAmount = Number(detail.historicalPrice) * qty;
+        refundedAmount += lineAmount;
+        refundedQty += qty;
+
+        if (qty === detail.qty) {
+          // Full refund of this line
+          detail.isRefund = true;
+          detail.refundReason = body.reason;
+          toSave.push(detail);
+          refundedItems.push({
+            detailId: detail.id,
+            productId: detail.productId,
+            name: detail.historicalName,
+            barcode: detail.historicalBarcode,
+            priceName: detail.historicalPriceName,
+            qty,
+            price: Number(detail.historicalPrice),
+          });
+        } else {
+          // Partial: shrink original detail and create a new refund detail
+          detail.qty = detail.qty - qty;
+          toSave.push(detail);
+
+          const refundDetail = new TransactionDetail();
+          refundDetail.transactionId = detail.transactionId;
+          refundDetail.productId = detail.productId;
+          refundDetail.historicalName = detail.historicalName;
+          refundDetail.historicalBarcode = detail.historicalBarcode;
+          refundDetail.historicalCode = detail.historicalCode;
+          refundDetail.historicalCategory = detail.historicalCategory;
+          refundDetail.historicalPriceName = detail.historicalPriceName;
+          refundDetail.historicalPrice = Number(detail.historicalPrice);
+          refundDetail.uomId = detail.uomId ?? null;
+          refundDetail.historicalUomCode = detail.historicalUomCode ?? null;
+          refundDetail.historicalUomName = detail.historicalUomName ?? null;
+          refundDetail.qty = qty;
+          refundDetail.isRefund = true;
+          refundDetail.refundReason = body.reason;
+          toSave.push(refundDetail);
+          refundedItems.push({
+            detailId: detail.id,
+            productId: detail.productId,
+            name: detail.historicalName,
+            barcode: detail.historicalBarcode,
+            priceName: detail.historicalPriceName,
+            qty,
+            price: Number(detail.historicalPrice),
+          });
+        }
       }
+
       await manager.save(Array.from(productMap.values()));
-      await manager.save(targets);
+      // Save existing detail rows (UPDATE) and new refund detail rows (INSERT)
+      // separately to avoid TypeORM mixing semantics on a heterogeneous array.
+      const existingDetails = toSave.filter((d) => !!d.id);
+      const newDetails = toSave.filter((d) => !d.id);
+      if (existingDetails.length) await manager.save(existingDetails);
+      if (newDetails.length) await manager.insert(TransactionDetail, newDetails);
 
       trx.totalPrice = Number(trx.totalPrice) - refundedAmount;
       trx.totalQty = trx.totalQty - refundedQty;
 
-      const allRefunded = details.every(
-        (d) => d.isRefund || body.detailIds.includes(d.id),
-      );
-      if (allRefunded) trx.status = TRX_REFUNDED;
+      // Determine if transaction is fully refunded
+      const refreshed = await manager.find(TransactionDetail, {
+        where: { transactionId: trx.id },
+      });
+      const remainingQty = refreshed
+        .filter((d) => !d.isRefund)
+        .reduce((sum, d) => sum + d.qty, 0);
+      if (remainingQty === 0) trx.status = TRX_REFUNDED;
+      // Avoid cascading the (now-mutated) details array which may confuse
+      // TypeORM into nullifying FKs. We've persisted detail changes above.
+      trx.transactionDetails = undefined;
       await manager.save(trx);
 
       const log = new AuditLog();
       log.action = "REFUND_TRX";
       log.actorId = user.id;
+      log.verifiedById = verifiedById;
       log.entityType = "Transaction";
       log.entityId = trx.id;
       log.reason = body.reason ?? null;
@@ -302,7 +431,7 @@ export class TransactionService {
         transactionNo: trx.transactionNo,
         refundedAmount,
         refundedQty,
-        detailIds: body.detailIds,
+        refundedItems,
       };
       await manager.save(log);
 

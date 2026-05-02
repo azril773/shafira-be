@@ -519,21 +519,57 @@
 				],
 				"type": "object"
 			},
+			"VoidTransactionBody": {
+				"properties": {
+					"verifierPassword": {
+						"type": "string"
+					},
+					"verifierUsername": {
+						"type": "string"
+					},
+					"reason": {
+						"type": "string"
+					}
+				},
+				"type": "object"
+			},
+			"RefundItemInput": {
+				"properties": {
+					"qty": {
+						"type": "number",
+						"format": "double"
+					},
+					"detailId": {
+						"$ref": "#/components/schemas/UUID"
+					}
+				},
+				"required": [
+					"qty",
+					"detailId"
+				],
+				"type": "object"
+			},
 			"RefundTransactionBody": {
 				"properties": {
+					"verifierPassword": {
+						"type": "string"
+					},
+					"verifierUsername": {
+						"type": "string"
+					},
 					"reason": {
 						"type": "string"
 					},
-					"detailIds": {
+					"items": {
 						"items": {
-							"$ref": "#/components/schemas/UUID"
+							"$ref": "#/components/schemas/RefundItemInput"
 						},
 						"type": "array"
 					}
 				},
 				"required": [
 					"reason",
-					"detailIds"
+					"items"
 				],
 				"type": "object"
 			},
@@ -1914,7 +1950,17 @@
 							"$ref": "#/components/schemas/UUID"
 						}
 					}
-				]
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/VoidTransactionBody"
+							}
+						}
+					}
+				}
 			}
 		},
 		"/transactions/{id}/refund": {

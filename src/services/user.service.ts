@@ -34,6 +34,7 @@ export class UserService {
     const skip = (page - 1) * limit;
     const qb = this.repo
       .createQueryBuilder("u")
+      .where("u.username != :sysAdmin", { sysAdmin: "admin" })
       .orderBy("u.username", "ASC")
       .skip(skip)
       .take(limit);
@@ -126,6 +127,8 @@ export class UserService {
   public async deleteUser(id: UUID): Promise<{ ok: boolean }> {
     const user = await this.repo.findOne({ where: { id } });
     if (!user) throw new Error("User tidak ditemukan");
+    if (user.username === "admin")
+      throw new Error("Admin sistem tidak dapat dihapus.");
     await this.repo.remove(user);
     return { ok: true };
   }

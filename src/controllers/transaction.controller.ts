@@ -23,6 +23,8 @@ import {
   createTransactionSchema,
   RefundTransactionBody,
   refundTransactionSchema,
+  VoidTransactionBody,
+  voidTransactionSchema,
 } from "types/transaction_type";
 import { UUID } from "types/common_type";
 import {
@@ -119,9 +121,13 @@ export class TransactionController extends Controller {
   }
 
   @Put("{id}/void")
-  @Middlewares([param("id").trim().escape().isUUID()])
+  @Middlewares([
+    param("id").trim().escape().isUUID(),
+    checkSchema(voidTransactionSchema),
+  ])
   public async voidTransaction(
     @Path() id: UUID,
+    @Body() body: VoidTransactionBody,
     @Request() req: ExRequest,
     @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
   ): Promise<Transaction> {
@@ -130,7 +136,7 @@ export class TransactionController extends Controller {
       const token = req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
-      return await this.transactionService.voidTransaction(id, user);
+      return await this.transactionService.voidTransaction(id, user, body);
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type
       return handleControllerError(error, { defaultErrorResponse });
