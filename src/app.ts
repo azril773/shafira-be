@@ -24,7 +24,7 @@ export async function configureApp(app: Application) {
   // Cache-Control Middleware
   app.use((req: ExRequest, res: ExResponse, next: NextFunction) => {
     // res.setHeader('Cache-Control', 'public, max-age=3600');
-    const expires = new Date(Date.now() + 3600 * 1000).toUTCString();
+    // const expires = new Date(Date.now() + 3600 * 1000).toUTCString();
     // res.setHeader('Expires', expires);
     // res.setHeader('Pragma', 'public');
     next();
