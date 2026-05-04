@@ -1,5 +1,12 @@
 import dataSource from "@config/database";
-import { CANCELLED, PENDING, POSTED } from "@constants/status";
+import {
+  CANCELLED,
+  PARTIAL_RETURNED,
+  PENDING,
+  POSTED,
+  RETURNED,
+} from "@constants/status";
+import { AuditLog } from "@models/audit_log.model";
 import { Product } from "@models/product.model";
 import { Purchase } from "@models/purchase.model";
 import { PurchaseDetail } from "@models/purchase_detail.model";
@@ -7,14 +14,71 @@ import { User } from "@models/user.model";
 import { Vendor } from "@models/vendor.model";
 import { In } from "typeorm";
 import { UUID } from "types/common_type";
+import { AUDIT_PURCHASE_RETURN_ITEM } from "types/audit_log";
 import {
   ChangeStatusPurchase,
   CreatePurchase,
   PurchaseDetailInput,
+  ReturnPurchaseItemsBody,
   UpdatePurchase,
 } from "types/purchase.type";
 
 export class PurchaseService {
+  private async buildReturnedQtyMap(
+    purchaseIds: UUID[],
+  ): Promise<Map<UUID, Map<UUID, number>>> {
+    const result = new Map<UUID, Map<UUID, number>>();
+    if (!purchaseIds.length) return result;
+
+    const logs = await dataSource.getRepository(AuditLog).find({
+      where: {
+        action: AUDIT_PURCHASE_RETURN_ITEM,
+        entityType: "Purchase",
+        entityId: In(purchaseIds),
+      },
+      order: { createdAt: "ASC" },
+    });
+
+    for (const log of logs) {
+      if (!log.entityId) continue;
+      const payload = (log.payload ?? {}) as {
+        items?: Array<{ purchaseDetailId?: UUID; qty?: number }>;
+      };
+      const items = payload.items ?? [];
+      if (!result.has(log.entityId)) result.set(log.entityId, new Map());
+      const detailMap = result.get(log.entityId)!;
+      for (const item of items) {
+        if (!item.purchaseDetailId) continue;
+        const qty = Number(item.qty ?? 0);
+        if (qty <= 0) continue;
+        detailMap.set(
+          item.purchaseDetailId,
+          (detailMap.get(item.purchaseDetailId) ?? 0) + qty,
+        );
+      }
+    }
+
+    return result;
+  }
+
+  private async enrichPurchaseReturnProgress(purchases: Purchase[]): Promise<void> {
+    if (!purchases.length) return;
+    const map = await this.buildReturnedQtyMap(purchases.map((p) => p.id));
+
+    for (const purchase of purchases) {
+      const detailMap = map.get(purchase.id) ?? new Map<UUID, number>();
+      for (const detail of purchase.purchaseDetails ?? []) {
+        const returnedQty = detailMap.get(detail.id) ?? 0;
+        const withMeta = detail as PurchaseDetail & {
+          returnedQty?: number;
+          remainingReturnQty?: number;
+        };
+        withMeta.returnedQty = returnedQty;
+        withMeta.remainingReturnQty = Math.max(0, (detail.qty ?? 0) - returnedQty);
+      }
+    }
+  }
+
   public async createPurchase(
     user: User,
     body: CreatePurchase,
@@ -70,6 +134,7 @@ export class PurchaseService {
       },
     });
     if (!purchase) throw new Error("purchase tidak ada");
+    await this.enrichPurchaseReturnProgress([purchase]);
     return purchase;
   }
 
@@ -131,6 +196,8 @@ export class PurchaseService {
       order: { purchaseDate: "DESC" },
     });
 
+    await this.enrichPurchaseReturnProgress(purchases);
+
     return { purchases, totalPages: Math.ceil(total / limit) };
   }
 
@@ -146,8 +213,10 @@ export class PurchaseService {
       if (!purchase) throw new Error("purchase tidak ada");
       const allowedChange: { [key: string]: string[] } = {
         [PENDING]: [POSTED, CANCELLED],
-        [POSTED]: [CANCELLED],
+        [POSTED]: [CANCELLED, RETURNED],
         [CANCELLED]: [],
+        [PARTIAL_RETURNED]: [],
+        [RETURNED]: [],
       };
       if (!allowedChange[purchase.status]?.includes(body.status)) {
         throw new Error("Perubahan status tidak valid");
@@ -167,6 +236,23 @@ export class PurchaseService {
           product.stock += detail.qty;
         }
         await manager.save(Array.from(productMap.values()));
+      } else if (purchase.status === POSTED && body.status === RETURNED) {
+        const returnedQtyMap = await this.buildReturnedQtyMap([purchase.id]);
+        const detailReturned = returnedQtyMap.get(purchase.id) ?? new Map<UUID, number>();
+        for (const detail of details) {
+          const product = productMap.get(detail.productId);
+          if (!product) throw new Error("product tidak ada");
+          const alreadyReturned = detailReturned.get(detail.id) ?? 0;
+          const remainingQty = Math.max(0, detail.qty - alreadyReturned);
+          if (remainingQty <= 0) continue;
+          if (product.stock < remainingQty) {
+            throw new Error(
+              `Tidak dapat retur purchase karena stok produk ${product.name} tidak mencukupi`,
+            );
+          }
+          product.stock -= remainingQty;
+        }
+        await manager.save(Array.from(productMap.values()));
       } else if (purchase.status === POSTED && body.status === CANCELLED) {
         for (const detail of details) {
           const product = productMap.get(detail.productId);
@@ -183,6 +269,137 @@ export class PurchaseService {
       purchase.status = body.status;
       purchase.updatedById = user.id;
       return await manager.save(purchase);
+    });
+  }
+
+  public async returnPurchaseItems(
+    user: User,
+    purchaseId: UUID,
+    body: ReturnPurchaseItemsBody,
+  ): Promise<Purchase> {
+    return await dataSource.transaction(async (manager) => {
+      const purchase = await manager.findOne(Purchase, {
+        where: { id: purchaseId },
+        relations: {
+          vendor: true,
+          purchaseDetails: { product: { prices: true } },
+        },
+      });
+      if (!purchase) throw new Error("purchase tidak ada");
+      if (![POSTED, PARTIAL_RETURNED].includes(purchase.status)) {
+        throw new Error("Hanya pembelian berstatus POSTED/PARTIAL_RETURNED yang dapat diretur.");
+      }
+
+      const details = purchase.purchaseDetails ?? [];
+      const detailMap = new Map(details.map((d) => [d.id, d]));
+
+      const requestedQty = new Map<UUID, number>();
+      for (const item of body.items ?? []) {
+        requestedQty.set(
+          item.purchaseDetailId,
+          (requestedQty.get(item.purchaseDetailId) ?? 0) + Number(item.qty ?? 0),
+        );
+      }
+      if (!requestedQty.size)
+        throw new Error("Pilih minimal satu item untuk diretur.");
+
+      const returnedMap = await this.buildReturnedQtyMap([purchase.id]);
+      const alreadyReturned = returnedMap.get(purchase.id) ?? new Map<UUID, number>();
+
+      const productIds: UUID[] = [];
+      const returnPayloadItems: Array<{
+        purchaseDetailId: UUID;
+        productId: UUID;
+        productName: string;
+        qty: number;
+        purchasePrice: number;
+      }> = [];
+
+      for (const [detailId, qty] of requestedQty) {
+        const detail = detailMap.get(detailId);
+        if (!detail) throw new Error("Item retur tidak ditemukan pada purchase.");
+        if (qty < 1) throw new Error("Qty retur harus minimal 1.");
+
+        const maxReturnable = Math.max(0, detail.qty - (alreadyReturned.get(detail.id) ?? 0));
+        if (qty > maxReturnable) {
+          throw new Error(
+            `Qty retur untuk produk ${detail.product?.name || "-"} melebihi sisa yang bisa diretur (${maxReturnable}).`,
+          );
+        }
+
+        productIds.push(detail.productId);
+        returnPayloadItems.push({
+          purchaseDetailId: detail.id,
+          productId: detail.productId,
+          productName: detail.product?.name || "-",
+          qty,
+          purchasePrice: Number(detail.purchasePrice ?? 0),
+        });
+      }
+
+      const products = await manager.find(Product, {
+        where: { id: In(Array.from(new Set(productIds))) },
+      });
+      const productMap = new Map(products.map((p) => [p.id, p]));
+
+      for (const item of returnPayloadItems) {
+        const product = productMap.get(item.productId);
+        if (!product) throw new Error("product tidak ada");
+        if (product.stock < item.qty) {
+          throw new Error(
+            `Tidak dapat retur purchase karena stok produk ${product.name} tidak mencukupi`,
+          );
+        }
+      }
+
+      for (const item of returnPayloadItems) {
+        const product = productMap.get(item.productId)!;
+        product.stock -= item.qty;
+      }
+      await manager.save(Array.from(productMap.values()));
+
+      const cumulativeReturned = new Map<UUID, number>(alreadyReturned);
+      for (const item of returnPayloadItems) {
+        cumulativeReturned.set(
+          item.purchaseDetailId,
+          (cumulativeReturned.get(item.purchaseDetailId) ?? 0) + item.qty,
+        );
+      }
+
+      const allFullyReturned = details.every((detail) => {
+        const returned = cumulativeReturned.get(detail.id) ?? 0;
+        return returned >= detail.qty;
+      });
+
+      purchase.status = allFullyReturned ? RETURNED : PARTIAL_RETURNED;
+      purchase.updatedById = user.id;
+      const saved = await manager.save(purchase);
+
+      const totalQty = returnPayloadItems.reduce((sum, item) => sum + item.qty, 0);
+      const totalValue = returnPayloadItems.reduce(
+        (sum, item) => sum + item.qty * item.purchasePrice,
+        0,
+      );
+
+      const log = new AuditLog();
+      log.action = AUDIT_PURCHASE_RETURN_ITEM;
+      log.actorId = user.id;
+      log.entityType = "Purchase";
+      log.entityId = purchase.id;
+      log.reason = body.reason ?? null;
+      log.payload = {
+        purchaseId: purchase.id,
+        purchaseDate: purchase.purchaseDate,
+        vendorId: purchase.vendorId,
+        vendorName: purchase.vendor?.name || null,
+        totalQty,
+        totalValue,
+        items: returnPayloadItems,
+      };
+      await manager.save(log);
+
+      await this.enrichPurchaseReturnProgress([saved]);
+      return saved;
     });
   }
 

@@ -744,6 +744,39 @@
 				},
 				"type": "object"
 			},
+			"ReturnPurchaseItemInput": {
+				"properties": {
+					"qty": {
+						"type": "number",
+						"format": "double"
+					},
+					"purchaseDetailId": {
+						"$ref": "#/components/schemas/UUID"
+					}
+				},
+				"required": [
+					"qty",
+					"purchaseDetailId"
+				],
+				"type": "object"
+			},
+			"ReturnPurchaseItemsBody": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/ReturnPurchaseItemInput"
+						},
+						"type": "array"
+					},
+					"reason": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"items"
+				],
+				"type": "object"
+			},
 			"Price": {
 				"properties": {
 					"price": {
@@ -2317,6 +2350,65 @@
 						"application/json": {
 							"schema": {
 								"$ref": "#/components/schemas/ChangeStatusPurchase"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/purchases/{id}/return-items": {
+			"put": {
+				"operationId": "ReturnPurchaseItems",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/Purchase"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Purchases"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ReturnPurchaseItemsBody"
 							}
 						}
 					}

@@ -1,3 +1,5 @@
 export const PENDING = "PENDING"
 export const POSTED = "POSTED"
 export const CANCELLED = "CANCELLED"
+export const PARTIAL_RETURNED = "PARTIAL_RETURNED"
+export const RETURNED = "RETURNED"

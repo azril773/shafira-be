@@ -27,6 +27,8 @@ import {
   changeStatusPurchaseSchema,
   CreatePurchase,
   createPurchaseSchema,
+  ReturnPurchaseItemsBody,
+  returnPurchaseItemsSchema,
   UpdatePurchase,
   updatePurchaseSchema,
 } from "types/purchase.type";
@@ -163,6 +165,29 @@ export class PurchaseController extends Controller {
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.purchaseService.updatePurchase(user, id, body);
+    } catch (error) {
+      // @ts-expect-error TsoaResponse any return type
+      return handleControllerError(error, { defaultErrorResponse });
+    }
+  }
+
+  @Put("{id}/return-items")
+  @Middlewares([
+    param("id").trim().escape().isUUID(),
+    checkSchema(returnPurchaseItemsSchema),
+  ])
+  public async returnPurchaseItems(
+    @Path() id: UUID,
+    @Body() body: ReturnPurchaseItemsBody,
+    @Request() req: ExRequest,
+    @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
+  ): Promise<Purchase> {
+    try {
+      validateRequest(req);
+      const token = req.cookies.access_token;
+      const user = await this.authService.getUserByToken(token as string);
+      if (!user) throw new UnauthorizedError("user tidak ada");
+      return await this.purchaseService.returnPurchaseItems(user, id, body);
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type
       return handleControllerError(error, { defaultErrorResponse });

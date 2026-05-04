@@ -5,12 +5,14 @@ export const AUDIT_VOID_ITEM = "VOID_ITEM";
 export const AUDIT_ABORT_SALE = "ABORT_SALE";
 export const AUDIT_VOID_TRX = "VOID_TRX";
 export const AUDIT_REFUND_TRX = "REFUND_TRX";
+export const AUDIT_PURCHASE_RETURN_ITEM = "PURCHASE_RETURN_ITEM";
 
 export const AUDIT_ACTIONS = [
   AUDIT_VOID_ITEM,
   AUDIT_ABORT_SALE,
   AUDIT_VOID_TRX,
   AUDIT_REFUND_TRX,
+  AUDIT_PURCHASE_RETURN_ITEM,
 ];
 
 export type CreateAuditLogBody = {

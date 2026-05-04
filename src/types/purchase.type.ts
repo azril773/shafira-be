@@ -1,6 +1,12 @@
 import { Schema } from "express-validator";
 import { UUID } from "./common_type";
-import { CANCELLED, PENDING, POSTED } from "@constants/status";
+import {
+  CANCELLED,
+  PARTIAL_RETURNED,
+  PENDING,
+  POSTED,
+  RETURNED,
+} from "@constants/status";
 
 export type PurchaseDetailInput = {
   productId: UUID;
@@ -23,6 +29,16 @@ export type UpdatePurchase = {
   vendorId?: UUID;
   purchaseDate?: Date;
   details?: PurchaseDetailInput[];
+};
+
+export type ReturnPurchaseItemInput = {
+  purchaseDetailId: UUID;
+  qty: number;
+};
+
+export type ReturnPurchaseItemsBody = {
+  reason?: string;
+  items: ReturnPurchaseItemInput[];
 };
 
 export const createPurchaseSchema: Schema = {
@@ -61,9 +77,30 @@ export const changeStatusPurchaseSchema: Schema = {
   },
   status: {
     isIn: {
-      options: [[PENDING, POSTED, CANCELLED]],
+      options: [[PENDING, POSTED, CANCELLED, PARTIAL_RETURNED, RETURNED]],
     },
     notEmpty: true,
+  },
+};
+
+export const returnPurchaseItemsSchema: Schema = {
+  items: {
+    isArray: {
+      options: { min: 1 },
+      errorMessage: "Pilih minimal satu item untuk diretur.",
+    },
+  },
+  "items.*.purchaseDetailId": {
+    isUUID: true,
+    notEmpty: true,
+  },
+  "items.*.qty": {
+    isInt: { options: { min: 1 } },
+    notEmpty: true,
+  },
+  reason: {
+    optional: { options: { values: "undefined" } },
+    isString: true,
   },
 };
 
