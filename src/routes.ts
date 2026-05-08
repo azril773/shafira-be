@@ -259,7 +259,7 @@ const models: TsoaRoute.Models = {
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ReturnPurchaseItemsBody": {
         "dataType": "refAlias",
-        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"items":{"dataType":"array","array":{"dataType":"refAlias","ref":"ReturnPurchaseItemInput"},"required":true},"reason":{"dataType":"string"}},"validators":{}},
+        "type": {"dataType":"nestedObjectLiteral","nestedProperties":{"verifierPassword":{"dataType":"string"},"verifierUsername":{"dataType":"string"},"reason":{"dataType":"string"},"items":{"dataType":"array","array":{"dataType":"refAlias","ref":"ReturnPurchaseItemInput"},"required":true}},"validators":{}},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Price": {

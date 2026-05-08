@@ -762,14 +762,20 @@
 			},
 			"ReturnPurchaseItemsBody": {
 				"properties": {
+					"verifierPassword": {
+						"type": "string"
+					},
+					"verifierUsername": {
+						"type": "string"
+					},
+					"reason": {
+						"type": "string"
+					},
 					"items": {
 						"items": {
 							"$ref": "#/components/schemas/ReturnPurchaseItemInput"
 						},
 						"type": "array"
-					},
-					"reason": {
-						"type": "string"
 					}
 				},
 				"required": [

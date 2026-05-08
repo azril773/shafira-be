@@ -1,12 +1,6 @@
 import { Schema } from "express-validator";
 import { UUID } from "./common_type";
-import {
-  CANCELLED,
-  PARTIAL_RETURNED,
-  PENDING,
-  POSTED,
-  RETURNED,
-} from "@constants/status";
+import { CANCELLED, PENDING, POSTED } from "@constants/status";
 
 export type PurchaseDetailInput = {
   productId: UUID;
@@ -37,8 +31,10 @@ export type ReturnPurchaseItemInput = {
 };
 
 export type ReturnPurchaseItemsBody = {
-  reason?: string;
   items: ReturnPurchaseItemInput[];
+  reason?: string;
+  verifierUsername?: string;
+  verifierPassword?: string;
 };
 
 export const createPurchaseSchema: Schema = {
@@ -77,30 +73,9 @@ export const changeStatusPurchaseSchema: Schema = {
   },
   status: {
     isIn: {
-      options: [[PENDING, POSTED, CANCELLED, PARTIAL_RETURNED, RETURNED]],
+      options: [[PENDING, POSTED, CANCELLED]],
     },
     notEmpty: true,
-  },
-};
-
-export const returnPurchaseItemsSchema: Schema = {
-  items: {
-    isArray: {
-      options: { min: 1 },
-      errorMessage: "Pilih minimal satu item untuk diretur.",
-    },
-  },
-  "items.*.purchaseDetailId": {
-    isUUID: true,
-    notEmpty: true,
-  },
-  "items.*.qty": {
-    isInt: { options: { min: 1 } },
-    notEmpty: true,
-  },
-  reason: {
-    optional: { options: { values: "undefined" } },
-    isString: true,
   },
 };
 
@@ -128,5 +103,35 @@ export const updatePurchaseSchema: Schema = {
   "details.*.purchasePrice": {
     optional: { options: { values: "undefined" } },
     isFloat: { options: { min: 0 } },
+  },
+};
+
+export const returnPurchaseItemsSchema: Schema = {
+  items: {
+    isArray: {
+      options: { min: 1 },
+      errorMessage: "Setidaknya harus ada satu item retur.",
+    },
+  },
+  "items.*.purchaseDetailId": {
+    isUUID: true,
+    notEmpty: true,
+  },
+  "items.*.qty": {
+    isInt: { options: { min: 1 } },
+    notEmpty: true,
+  },
+  reason: {
+    optional: { options: { values: "undefined" } },
+    isString: true,
+    trim: true,
+  },
+  verifierUsername: {
+    optional: { options: { values: "undefined" } },
+    isString: true,
+  },
+  verifierPassword: {
+    optional: { options: { values: "undefined" } },
+    isString: true,
   },
 };
