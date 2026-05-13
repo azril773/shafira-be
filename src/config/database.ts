@@ -10,7 +10,7 @@ const options: DataSourceOptions & SeederOptions = {
   password: process.env.POSTGRES_PASSWORD || '123',
   database: process.env.POSTGRES_DB || 'shafira_db',
   entities: ['{src,build}/models/*.model{.ts,.js}'],
-  // synchronize: true,
+  synchronize: true,
   // additional config options brought by typeorm-extension
   factories: ['{src,build}/database/factories/*.factory{.ts,.js}'],
   seeds: [MainSeeder],
