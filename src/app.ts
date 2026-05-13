@@ -14,7 +14,7 @@ export async function configureApp(app: Application) {
   // CORS Middleware
   app.use(
     cors({
-      origin: 'http://localhost:5173', // Allow only this origin
+      origin: process.env.ORIGIN, // Allow only this origin
       methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow only these methods
       allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Expires', 'Pragma'], // Allow only these headers
       credentials: true
