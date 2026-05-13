@@ -7,7 +7,7 @@
     "start": "node build/server.js",
     "predev": "npm run model && npm run swagger",
     "prebuild": "npm run model && npm run swagger",
-    "build": "tsc --project tsconfig.prod.json && tsc-alias -p tsconfig.prod.json",
+    "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
     "dev": "concurrently \"nodemon\" \"nodemon -x tsoa spec-and-routes\"",
     "swagger": "tsoa spec-and-routes",
     "model": "node src/scripts/model",
