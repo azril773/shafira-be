@@ -48,7 +48,7 @@ export class TransactionController extends Controller {
   ): Promise<Transaction> {
     try {
       validateRequest(req);
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.transactionService.createTransaction(body, user);
@@ -85,7 +85,7 @@ export class TransactionController extends Controller {
   ): Promise<{ transactions: Transaction[]; totalPages: number }> {
     try {
       validateRequest(req);
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.transactionService.searchTransactions({
@@ -110,7 +110,7 @@ export class TransactionController extends Controller {
   ): Promise<Transaction> {
     try {
       validateRequest(req);
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.transactionService.getTransactionById(id);
@@ -133,7 +133,7 @@ export class TransactionController extends Controller {
   ): Promise<Transaction> {
     try {
       validateRequest(req);
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.transactionService.voidTransaction(id, user, body);
@@ -156,7 +156,7 @@ export class TransactionController extends Controller {
   ): Promise<Transaction> {
     try {
       validateRequest(req);
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.transactionService.refundTransaction(id, body, user);

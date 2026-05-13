@@ -50,7 +50,7 @@ export class PurchaseController extends Controller {
   ): Promise<Purchase> {
     try {
       validateRequest(req);
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.purchaseService.createPurchase(user, body);
@@ -94,7 +94,7 @@ export class PurchaseController extends Controller {
   ): Promise<{ purchases: Purchase[]; totalPages: number }> {
     try {
       validateRequest(req);
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.purchaseService.searchPurchases({
@@ -119,7 +119,7 @@ export class PurchaseController extends Controller {
   ): Promise<Purchase> {
     try {
       validateRequest(req);
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.purchaseService.getPurchaseById(id);
@@ -138,7 +138,7 @@ export class PurchaseController extends Controller {
   ): Promise<Purchase> {
     try {
       validateRequest(req);
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.purchaseService.updateStatus(user, body);
@@ -161,7 +161,7 @@ export class PurchaseController extends Controller {
   ): Promise<Purchase> {
     try {
       validateRequest(req);
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.purchaseService.updatePurchase(user, id, body);
@@ -184,7 +184,7 @@ export class PurchaseController extends Controller {
   ): Promise<Purchase> {
     try {
       validateRequest(req);
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.purchaseService.returnPurchaseItems(user, id, body);

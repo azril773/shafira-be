@@ -9,7 +9,7 @@ export async function checkRole(
   req: Request,
   ...allowedRoles: string[]
 ): Promise<{ payload: JwtTokenPayload; user: User }> {
-  const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
+  const token = req.headers.authorization?.split(" ")[1] || req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
   if (!token) throw new UnauthorizedError("Token tidak ditemukan");
   const payload = await verifyJWT(token);
   if (!allowedRoles.includes(payload.role))

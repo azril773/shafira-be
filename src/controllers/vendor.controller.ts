@@ -41,7 +41,7 @@ export class VendorController extends Controller {
     @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
   ): Promise<Vendor[]> {
     try {
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.vendorService.getVendors();
@@ -69,7 +69,7 @@ export class VendorController extends Controller {
     @Query() phone?: string,
   ): Promise<{ vendors: Vendor[]; totalPages: number }> {
     try {
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.vendorService.searchVendors({
@@ -92,7 +92,7 @@ export class VendorController extends Controller {
   ) {
     try {
       validateRequest(req);
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.vendorService.createVendor(user, body);
@@ -115,7 +115,7 @@ export class VendorController extends Controller {
   ) {
     try {
       validateRequest(req);
-      const token = req.cookies.access_token;
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
       const user = await this.authService.getUserByToken(token as string);
       if (!user) throw new UnauthorizedError("user tidak ada");
       return await this.vendorService.updateVendor(id, user, body);
