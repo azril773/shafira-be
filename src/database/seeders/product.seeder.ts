@@ -52,23 +52,23 @@ export async function productSeeder(dataSource: DataSource): Promise<Product[]> 
 
     const product = new Product();
     product.name = `Produk ${pad(idx, 3)}`;
-    product.code = `SKU-${pad(idx, 4)}`;
+    product.code = `${pad(idx, 4)}`;
     product.category = category;
     product.barcode = randomBarcode(idx);
     product.stock = 0;
-    product.uomId = uom.id;
+    product.uom_id = uom.id;
     const saved = await productRepo.save(product);
 
     const basePrice = randomPrice(2000, 50000, 500);
     const grosirPrice = Math.max(basePrice - 500, 1000);
     const prices: PriceProduct[] = [];
     const p1 = new PriceProduct();
-    p1.productId = saved.id;
+    p1.product_id = saved.id;
     p1.name = "Eceran";
     p1.price = basePrice;
     prices.push(p1);
     const p2 = new PriceProduct();
-    p2.productId = saved.id;
+    p2.product_id = saved.id;
     p2.name = "Grosir";
     p2.price = grosirPrice;
     prices.push(p2);

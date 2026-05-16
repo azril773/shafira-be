@@ -14,7 +14,7 @@ export class Product {
   @Column({ type: "varchar", length: 255, nullable: false, unique: true })
   code!: string;
 
-  @Column({ type: "varchar", nullable: false })
+  @Column({ type: "varchar", nullable: false, default: "Uncategorized" })
   category!: string;
 
   @Column({ type: "varchar", length: 150, nullable: false })
@@ -27,8 +27,8 @@ export class Product {
   stock!: number;
 
   @Column({ type: "uuid", nullable: true })
-  uomId?: UUID | null;
-  @JoinColumn({ name: "uomId" })
+  uom_id?: UUID | null;
+  @JoinColumn({ name: "uom_id" })
   @ManyToOne(() => Uom, { nullable: true })
   uom?: Uom | null;
 }

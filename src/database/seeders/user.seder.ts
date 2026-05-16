@@ -14,19 +14,19 @@ export async function userSeeder(dataSource: DataSource) {
   admin.name = "Admin";
   admin.status = USER_STATUS_APPROVED;
 
-  // const cashier = new User();
-  // cashier.username = "cashier";
-  // cashier.password = HASH; // "cashier123"
-  // cashier.role = CASHIER;
-  // cashier.name = "Kasir";
-  // cashier.status = USER_STATUS_APPROVED;
+  const cashier = new User();
+  cashier.username = "cashier";
+  cashier.password = HASH; // "cashier123"
+  cashier.role = CASHIER;
+  cashier.name = "Kasir";
+  cashier.status = USER_STATUS_APPROVED;
 
-  // const verifAdmin = new User();
-  // verifAdmin.username = "verif_admin";
-  // verifAdmin.password = HASH; // "admin123" / "cashier123" – same hash
-  // verifAdmin.role = VERIF_ADMIN;
-  // verifAdmin.name = "Verifikator Admin";
-  // verifAdmin.status = USER_STATUS_APPROVED;
+  const verifAdmin = new User();
+  verifAdmin.username = "verif_admin";
+  verifAdmin.password = HASH; // "admin123" / "cashier123" – same hash
+  verifAdmin.role = VERIF_ADMIN;
+  verifAdmin.name = "Verifikator Admin";
+  verifAdmin.status = USER_STATUS_APPROVED;
 
-  return await userRepository.save([admin]);
+  return await userRepository.save([admin, cashier, verifAdmin]);
 }

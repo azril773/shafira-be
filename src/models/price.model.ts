@@ -11,14 +11,14 @@ import { DecimalTransformer } from "utils/decimal_transformer";
 import { Product } from "./product.model";
 
 @Entity()
-@Unique(["productId", "name"])
+@Unique(["product_id", "name"])
 export class PriceProduct {
   @PrimaryGeneratedColumn("uuid")
   id!: UUID;
 
   @Column({ type: "uuid", nullable: false })
-  productId!: UUID;
-  @JoinColumn({ name: "productId" })
+  product_id!: UUID;
+  @JoinColumn({ name: "product_id" })
   @ManyToOne(() => Product, (product) => product.prices)
   product?: Product;
 

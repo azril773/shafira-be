@@ -26,7 +26,7 @@ export const validateBarcode = (barcode: string): boolean => {
       }
       break;
     default:
-      result = false;
+      result = true;
   }
   return result;
 };

@@ -13,7 +13,7 @@ import { app, configureApp } from './app';
   dataSource
   .initialize()
   .then(async () => {
-      await dataSource.dropDatabase()
+      // await dataSource.dropDatabase()
       await dataSource.synchronize();
       if (process.env.RUN_SEEDERS === 'true') {
         await runSeeders(dataSource);

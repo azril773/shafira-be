@@ -106,7 +106,7 @@ export class TransactionService {
           );
         }
 
-        const resolvedUomId = d.uomId ?? product.uomId ?? null;
+        const resolvedUomId = d.uomId ?? product.uom_id ?? null;
         const resolvedUom = resolvedUomId
           ? (uomMap.get(resolvedUomId) ?? product.uom ?? null)
           : (product.uom ?? null);

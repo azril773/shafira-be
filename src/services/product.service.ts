@@ -56,7 +56,7 @@ export class ProductService {
     product.category = body.category;
     product.barcode = body.barcode;
     product.code = code;
-    product.uomId = body.uomId ?? null;
+    product.uom_id = body.uomId ?? null;
     return await this.productRepository.save(product);
   }
 
@@ -84,7 +84,7 @@ export class ProductService {
     product.name = body.name ?? product.name;
     product.category = body.category ?? product.category;
     product.barcode = body.barcode ?? product.barcode;
-    if (body.uomId !== undefined) product.uomId = body.uomId;
+    if (body.uomId !== undefined) product.uom_id = body.uomId;
 
     const existingPrices = product.prices;
     const newPrices: PriceProduct[] = [];
@@ -129,10 +129,10 @@ export class ProductService {
     queryBuilder.leftJoinAndSelect("product.prices", "prices");
     queryBuilder.leftJoinAndSelect("product.uom", "uom");
     if (barcode) {
-      queryBuilder.andWhere("product.barcode = :barcode", { barcode });
-    }
-    if (code) {
-      queryBuilder.andWhere("product.code = :code", { code });
+      queryBuilder.andWhere("product.barcode = :barcode OR product.code = :code", {
+        barcode,
+        code: barcode,
+      });
     }
     if (name) {
       queryBuilder.andWhere("LOWER(product.name) LIKE :name", {
