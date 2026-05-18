@@ -131,7 +131,7 @@ const models: TsoaRoute.Models = {
             "barcode": {"dataType":"string","required":true},
             "prices": {"dataType":"array","array":{"dataType":"refObject","ref":"PriceProduct"},"required":true},
             "stock": {"dataType":"double","required":true},
-            "uomId": {"dataType":"union","subSchemas":[{"ref":"UUID"},{"dataType":"enum","enums":[null]}]},
+            "uom_id": {"dataType":"union","subSchemas":[{"ref":"UUID"},{"dataType":"enum","enums":[null]}]},
             "uom": {"dataType":"union","subSchemas":[{"ref":"Uom"},{"dataType":"enum","enums":[null]}]},
         },
         "additionalProperties": false,
@@ -141,7 +141,7 @@ const models: TsoaRoute.Models = {
         "dataType": "refObject",
         "properties": {
             "id": {"ref":"UUID","required":true},
-            "productId": {"ref":"UUID","required":true},
+            "product_id": {"ref":"UUID","required":true},
             "product": {"ref":"Product"},
             "name": {"dataType":"string","required":true},
             "price": {"dataType":"double","required":true},

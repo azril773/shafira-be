@@ -29,7 +29,7 @@ export class PurchaseDetail {
   @JoinColumn({ name: "productId" })
   product?: Product;
 
-  @Column({ type: "integer", nullable: false })
+  @Column({ type: "decimal", nullable: false, transformer: new DecimalTransformer() })
   qty!: number;
 
   @Column({

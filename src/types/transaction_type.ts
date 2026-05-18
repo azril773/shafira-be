@@ -57,7 +57,7 @@ export const createTransactionSchema: Schema = {
     notEmpty: true,
   },
   "transactionDetails.*.qty": {
-    isInt: { options: { min: 1 } },
+    isFloat: { options: { min: 0.001 } },
   },
   "transactionDetails.*.uomId": {
     optional: { options: { values: "null" } },
@@ -73,7 +73,7 @@ export const refundTransactionSchema: Schema = {
     isUUID: true,
   },
   "items.*.qty": {
-    isInt: { options: { min: 1 } },
+    isFloat: { options: { min: 0.001 } },
   },
   reason: {
     isString: true,

@@ -7,6 +7,8 @@ export async function uomSeeder(dataSource: DataSource) {
     { code: "pcs", name: "Pieces", description: "Satuan per buah" },
     { code: "gram", name: "Gram", description: "Satuan berat (gram)" },
     { code: "ml", name: "Mililiter", description: "Satuan volume (ml)" },
+    { code: "kg", name: "Kilogram", description: "Satuan berat (kg)" },
+    { code: "liter", name: "Liter", description: "Satuan volume (liter)" },
   ];
   const items = defaults.map((d) => {
     const u = new Uom();

@@ -69,6 +69,6 @@ export class TransactionDetail {
   @Column({ type: "varchar", nullable: true })
   refundReason?: string | null;
 
-  @Column({ type: "integer", nullable: false })
+  @Column({ type: "decimal", nullable: false, transformer: new DecimalTransformer() })
   qty!: number;
 }

@@ -40,7 +40,7 @@ export class Transaction extends Base {
   })
   totalPrice!: number;
 
-  @Column({ type: "integer", nullable: false })
+  @Column({ type: "decimal", nullable: false, transformer: new DecimalTransformer() })
   totalQty!: number;
 
   @Column({ type: "varchar", nullable: false, default: "POSTED" })

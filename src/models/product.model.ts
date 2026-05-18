@@ -2,6 +2,7 @@ import { UUID } from "types/common_type";
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { PriceProduct } from "./price.model";
 import { Uom } from "./uom.model";
+import { DecimalTransformer } from "utils/decimal_transformer";
 
 @Entity()
 export class Product {
@@ -23,7 +24,7 @@ export class Product {
   @OneToMany(() => PriceProduct, (price) => price.product, { cascade: true })
   prices!: PriceProduct[];
 
-  @Column({ type: "integer", nullable: false, default: 0 })
+  @Column({ type: "decimal", nullable: false, default: 0, transformer: new DecimalTransformer() })
   stock!: number;
 
   @Column({ type: "uuid", nullable: true })

@@ -57,7 +57,7 @@ export const createPurchaseSchema: Schema = {
     notEmpty: true,
   },
   "details.*.qty": {
-    isInt: { options: { min: 1 } },
+    isFloat: { options: { min: 0.001 } },
     notEmpty: true,
   },
   "details.*.purchasePrice": {
@@ -98,7 +98,7 @@ export const updatePurchaseSchema: Schema = {
   },
   "details.*.qty": {
     optional: { options: { values: "undefined" } },
-    isInt: { options: { min: 1 } },
+    isFloat: { options: { min: 0.001 } },
   },
   "details.*.purchasePrice": {
     optional: { options: { values: "undefined" } },
@@ -118,7 +118,7 @@ export const returnPurchaseItemsSchema: Schema = {
     notEmpty: true,
   },
   "items.*.qty": {
-    isInt: { options: { min: 1 } },
+    isFloat: { options: { min: 0.001 } },
     notEmpty: true,
   },
   reason: {

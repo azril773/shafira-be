@@ -324,7 +324,7 @@
 						"type": "number",
 						"format": "double"
 					},
-					"uomId": {
+					"uom_id": {
 						"allOf": [
 							{
 								"$ref": "#/components/schemas/UUID"
@@ -358,7 +358,7 @@
 					"id": {
 						"$ref": "#/components/schemas/UUID"
 					},
-					"productId": {
+					"product_id": {
 						"$ref": "#/components/schemas/UUID"
 					},
 					"product": {
@@ -374,7 +374,7 @@
 				},
 				"required": [
 					"id",
-					"productId",
+					"product_id",
 					"name",
 					"price"
 				],
