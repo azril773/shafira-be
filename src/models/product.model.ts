@@ -1,10 +1,11 @@
 import { UUID } from "types/common_type";
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Unique } from "typeorm";
 import { PriceProduct } from "./price.model";
 import { Uom } from "./uom.model";
 import { DecimalTransformer } from "utils/decimal_transformer";
 
 @Entity()
+@Unique(['code', 'barcode'])
 export class Product {
   @PrimaryGeneratedColumn("uuid")
   id!: UUID;
@@ -12,7 +13,7 @@ export class Product {
   @Column({ type: "varchar", length: 255, nullable: false })
   name!: string;
 
-  @Column({ type: "varchar", length: 255, nullable: false, unique: true })
+  @Column({ type: "varchar", length: 255, nullable: false })
   code!: string;
 
   @Column({ type: "varchar", nullable: false, default: "Uncategorized" })
