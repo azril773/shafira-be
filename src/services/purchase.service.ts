@@ -355,6 +355,8 @@ export class PurchaseService {
             purchaseId: purchase.id,
           });
         }
+        // Prevent stale relation data from being cascaded back after delete.
+        purchase.purchaseDetails = [];
         purchase.updatedById = user.id;
         const savedPurchase = await manager.save(purchase);
         const newDetails = body.details.map((d) => {

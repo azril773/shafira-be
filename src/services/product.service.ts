@@ -4,10 +4,14 @@ import { Product } from "@models/product.model";
 import { UUID } from "types/common_type";
 import { ProductBody } from "types/product";
 import { generateUniqueCode, validateBarcode } from "utils/utils";
+import { AuditLogService } from "@services/audit_log.service";
+import { User } from "@models/user.model";
+import { AUDIT_EDIT_STOCK } from "types/audit_log";
 
 export class ProductService {
   private productRepository = dataSource.getRepository(Product);
   private priceRepository = dataSource.getRepository(PriceProduct);
+  private auditLogService = new AuditLogService();
 
   public async getProducts(): Promise<Product[]> {
     return await this.productRepository.find({ relations: { prices: true, uom: true } });
@@ -112,6 +116,27 @@ export class ProductService {
     return await this.productRepository.save(product);
   }
 
+  public async updateStock(
+    id: UUID,
+    stock: number,
+    actor: User,
+    reason?: string,
+  ): Promise<Product> {
+    const product = await this.productRepository.findOne({ where: { id } });
+    if (!product) throw new Error("Produk tidak ditemukan.");
+    const oldStock = product.stock;
+    product.stock = stock;
+    const saved = await this.productRepository.save(product);
+    await this.auditLogService.createLog(actor, {
+      action: AUDIT_EDIT_STOCK,
+      entityType: "Product",
+      entityId: id,
+      reason: reason ?? null,
+      payload: { oldStock, newStock: stock, productName: product.name },
+    });
+    return saved;
+  }
+
   public async searchProductsForPOS({ name }: { name?: string }): Promise<Product[]> {
     const queryBuilder = this.productRepository.createQueryBuilder("product");
     queryBuilder.leftJoinAndSelect("product.prices", "prices");
@@ -120,6 +145,19 @@ export class ProductService {
       queryBuilder.andWhere("LOWER(product.name) LIKE :name", {
         name: `%${name.toLowerCase()}%`,
       });
+    }
+    return await queryBuilder.getMany();
+  }
+
+  public async searchProductsForPurchase({ q }: { q?: string }): Promise<Product[]> {
+    const queryBuilder = this.productRepository.createQueryBuilder("product");
+    queryBuilder.leftJoinAndSelect("product.prices", "prices");
+    queryBuilder.leftJoinAndSelect("product.uom", "uom");
+    if (q) {
+      queryBuilder.andWhere(
+        "(LOWER(product.name) LIKE :q OR LOWER(product.barcode) LIKE :q OR LOWER(product.code) LIKE :q)",
+        { q: `%${q.toLowerCase()}%` },
+      );
     }
     return await queryBuilder.getMany();
   }

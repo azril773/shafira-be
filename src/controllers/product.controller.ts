@@ -1,7 +1,7 @@
 import { handleControllerError } from "@errors/custom_error";
 import { Product } from "@models/product.model";
 import { ProductService } from "@services/product.service";
-import { ProductBody, productSchema } from "types/product";
+import { ProductBody, productSchema, UpdateStockBody, updateStockSchema } from "types/product";
 import { Request as ExRequest } from "express";
 import { checkSchema, param, query, validationResult } from "express-validator";
 import {
@@ -20,7 +20,7 @@ import {
   TsoaResponse,
 } from "tsoa";
 import { checkRole } from "utils/middleware";
-import { ADMIN, CASHIER } from "@constants/user";
+import { ADMIN, CASHIER, INVENTORY_MANAGER } from "@constants/user";
 import { UUID } from "types/common_type";
 
 @Route("products")
@@ -60,6 +60,24 @@ export class ProductController extends Controller {
     }
   }
 
+  @Put("{id}/stock")
+  @Middlewares([param("id").trim().escape().isUUID(), checkSchema(updateStockSchema)])
+  public async updateStock(
+    @Path() id: UUID,
+    @Body() body: UpdateStockBody,
+    @Request() req: ExRequest,
+    @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
+  ): Promise<Product> {
+    try {
+      validationResult(req);
+      const { user } = await checkRole(req, ADMIN, INVENTORY_MANAGER);
+      return await this.productService.updateStock(id, body.stock, user, body.reason);
+    } catch (error) {
+      // @ts-expect-error TsoaResponse any return type
+      return handleControllerError(error, { defaultErrorResponse });
+    }
+  }
+
   @Put("{id}")
   @Middlewares([param("id").trim().escape().isUUID(), checkSchema(productSchema)])
   public async updateProduct(
@@ -91,6 +109,25 @@ export class ProductController extends Controller {
       validationResult(req);
       await checkRole(req, ADMIN, CASHIER);
       return await this.productService.searchProductsForPOS({ name });
+    } catch (error) {
+      // @ts-expect-error TsoaResponse any return type
+      return handleControllerError(error, { defaultErrorResponse });
+    }
+  }
+
+  @Get("search-purchase")
+  @Middlewares([
+    query("q").trim().escape().isString().optional({ values: 'undefined' }),
+  ])
+  public async searchProductsForPurchase(
+    @Request() req: ExRequest,
+    @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
+    @Query() q?: string,
+  ): Promise<Product[]> {
+    try {
+      validationResult(req);
+      await checkRole(req, ADMIN, INVENTORY_MANAGER);
+      return await this.productService.searchProductsForPurchase({ q });
     } catch (error) {
       // @ts-expect-error TsoaResponse any return type
       return handleControllerError(error, { defaultErrorResponse });

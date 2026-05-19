@@ -47,6 +47,23 @@ export type ProductBody = {
   uomId?: UUID | null;
 };
 
+export type UpdateStockBody = {
+  stock: number;
+  reason?: string;
+};
+
+export const updateStockSchema: Schema = {
+  stock: {
+    isInt: { options: { min: 0 } },
+  },
+  reason: {
+    optional: { options: { values: "undefined" } },
+    isString: true,
+    escape: true,
+    trim: true,
+  },
+};
+
 export type Price = {
   name: string;
   price: number;
