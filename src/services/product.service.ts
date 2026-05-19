@@ -112,6 +112,18 @@ export class ProductService {
     return await this.productRepository.save(product);
   }
 
+  public async searchProductsForPOS({ name }: { name?: string }): Promise<Product[]> {
+    const queryBuilder = this.productRepository.createQueryBuilder("product");
+    queryBuilder.leftJoinAndSelect("product.prices", "prices");
+    queryBuilder.leftJoinAndSelect("product.uom", "uom");
+    if (name) {
+      queryBuilder.andWhere("LOWER(product.name) LIKE :name", {
+        name: `%${name.toLowerCase()}%`,
+      });
+    }
+    return await queryBuilder.getMany();
+  }
+
   public async searchProducts({
     page,
     barcode,

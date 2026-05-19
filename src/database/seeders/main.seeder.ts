@@ -10,11 +10,11 @@ import { ADMIN } from '@constants/user';
 export default class MainSeeder implements Seeder {
   public async run(dataSource: DataSource, factoryManager: SeederFactoryManager): Promise<void> {
     void factoryManager;
-    // await userSeeder(dataSource)
-    // await uomSeeder(dataSource)
-    // const admin = await dataSource.getRepository(User).findOneOrFail({ where: { username: 'admin', role: ADMIN } })
-    // const vendors = await vendorSeeder(dataSource, admin)
-    // const products = await productSeeder(dataSource)
-    // await purchaseSeeder(dataSource, products, vendors, admin)
+    await userSeeder(dataSource)
+    await uomSeeder(dataSource)
+    const admin = await dataSource.getRepository(User).findOneOrFail({ where: { username: 'admin', role: ADMIN } })
+    const vendors = await vendorSeeder(dataSource, admin)
+    const products = await productSeeder(dataSource)
+    await purchaseSeeder(dataSource, products, vendors, admin)
   }
 }

@@ -78,6 +78,25 @@ export class ProductController extends Controller {
     }
   }
 
+  @Get("search-pos")
+  @Middlewares([
+    query("name").trim().escape().isString().optional({ values: 'undefined' }),
+  ])
+  public async searchProductsForPOS(
+    @Request() req: ExRequest,
+    @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
+    @Query() name?: string,
+  ): Promise<Product[]> {
+    try {
+      validationResult(req);
+      await checkRole(req, ADMIN, CASHIER);
+      return await this.productService.searchProductsForPOS({ name });
+    } catch (error) {
+      // @ts-expect-error TsoaResponse any return type
+      return handleControllerError(error, { defaultErrorResponse });
+    }
+  }
+
   @Get("search")
   @Middlewares([
     query("page").trim().escape().isString(),
