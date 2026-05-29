@@ -57,15 +57,27 @@ export async function productSeeder(dataSource: DataSource): Promise<Product[]> 
     product.barcode = randomBarcode(idx);
     product.stock = 0;
     product.uom_id = uom.id;
+    // HPP ~ 55-75% of basePrice (so margin reports show realistic numbers)
+    const basePrice = randomPrice(2000, 50000, 500);
+    product.hpp = Math.round((basePrice * (0.55 + Math.random() * 0.2)) / 100) * 100;
     const saved = await productRepo.save(product);
 
-    const basePrice = randomPrice(2000, 50000, 500);
     const grosirPrice = Math.max(basePrice - 500, 1000);
     const prices: PriceProduct[] = [];
     const p1 = new PriceProduct();
     p1.product_id = saved.id;
     p1.name = "Eceran";
     p1.price = basePrice;
+    // Add promo for ~25% of products on the Eceran tier
+    if (idx % 4 === 0) {
+      p1.promoPrice = Math.max(Math.round((basePrice * 0.85) / 100) * 100, product.hpp + 500);
+      const start = new Date();
+      start.setDate(start.getDate() - 7);
+      const end = new Date();
+      end.setDate(end.getDate() + 21);
+      p1.promoStartDate = start;
+      p1.promoEndDate = end;
+    }
     prices.push(p1);
     const p2 = new PriceProduct();
     p2.product_id = saved.id;

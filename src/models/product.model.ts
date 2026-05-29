@@ -28,6 +28,9 @@ export class Product {
   @Column({ type: "decimal", nullable: false, default: 0, transformer: new DecimalTransformer() })
   stock!: number;
 
+  @Column({ type: "decimal", nullable: false, default: 0, transformer: new DecimalTransformer() })
+  hpp!: number;
+
   @Column({ type: "uuid", nullable: true })
   uom_id?: UUID | null;
   @JoinColumn({ name: "uom_id" })

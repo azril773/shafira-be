@@ -10,6 +10,7 @@ import { UUID } from "types/common_type";
 import { User } from "./user.model";
 import { Base } from "./base";
 import { TransactionDetail } from "./transaction_detail.model";
+import { TransactionPayment } from "./transaction_payment.model";
 import { DecimalTransformer } from "utils/decimal_transformer";
 
 @Entity()
@@ -29,6 +30,13 @@ export class Transaction extends Base {
     { cascade: true },
   )
   transactionDetails?: TransactionDetail[];
+
+  @OneToMany(
+    () => TransactionPayment,
+    (payment) => payment.transaction,
+    { cascade: true },
+  )
+  payments?: TransactionPayment[];
 
   @Column({ type: "varchar", nullable: false })
   transactionNo!: string;

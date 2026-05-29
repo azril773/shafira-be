@@ -101,6 +101,65 @@ export class TransactionController extends Controller {
     }
   }
 
+  // ----- REPORTS (placed BEFORE the {id} route so they don't get matched as id) -----
+
+  @Get("report/x")
+  @Middlewares([
+    query("from").trim().escape().optional({ values: "undefined" }),
+    query("to").trim().escape().optional({ values: "undefined" }),
+    query("paymentMethod").trim().escape().optional({ values: "undefined" }),
+    query("cashierId").trim().escape().optional({ values: "undefined" }),
+  ])
+  public async getXReport(
+    @Request() req: ExRequest,
+    @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
+    @Query() from?: string,
+    @Query() to?: string,
+    @Query() paymentMethod?: string,
+    @Query() cashierId?: string,
+  ): Promise<unknown> {
+    try {
+      validateRequest(req);
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
+      const user = await this.authService.getUserByToken(token as string);
+      if (!user) throw new UnauthorizedError("user tidak ada");
+      return await this.transactionService.getXReport({
+        from,
+        to,
+        paymentMethod,
+        cashierId: cashierId as UUID | undefined,
+      });
+    } catch (error) {
+      // @ts-expect-error TsoaResponse any return type
+      return handleControllerError(error, { defaultErrorResponse });
+    }
+  }
+
+  @Get("report/margin")
+  @Middlewares([
+    query("from").trim().escape().optional({ values: "undefined" }),
+    query("to").trim().escape().optional({ values: "undefined" }),
+    query("category").trim().escape().optional({ values: "undefined" }),
+  ])
+  public async getMarginReport(
+    @Request() req: ExRequest,
+    @Res() defaultErrorResponse: TsoaResponse<500, { message: string }>,
+    @Query() from?: string,
+    @Query() to?: string,
+    @Query() category?: string,
+  ): Promise<unknown> {
+    try {
+      validateRequest(req);
+      const token = req.headers.authorization?.split(" ")[1] || req.cookies.access_token;
+      const user = await this.authService.getUserByToken(token as string);
+      if (!user) throw new UnauthorizedError("user tidak ada");
+      return await this.transactionService.getMarginReport({ from, to, category });
+    } catch (error) {
+      // @ts-expect-error TsoaResponse any return type
+      return handleControllerError(error, { defaultErrorResponse });
+    }
+  }
+
   @Get("{id}")
   @Middlewares([param("id").trim().escape().isUUID()])
   public async getTransactionById(

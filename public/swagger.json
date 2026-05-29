@@ -255,6 +255,12 @@
 						},
 						"type": "array"
 					},
+					"payments": {
+						"items": {
+							"$ref": "#/components/schemas/TransactionPayment"
+						},
+						"type": "array"
+					},
 					"transactionNo": {
 						"type": "string"
 					},
@@ -324,6 +330,10 @@
 						"type": "number",
 						"format": "double"
 					},
+					"hpp": {
+						"type": "number",
+						"format": "double"
+					},
 					"uom_id": {
 						"allOf": [
 							{
@@ -348,7 +358,8 @@
 					"category",
 					"barcode",
 					"prices",
-					"stock"
+					"stock",
+					"hpp"
 				],
 				"type": "object",
 				"additionalProperties": false
@@ -370,6 +381,21 @@
 					"price": {
 						"type": "number",
 						"format": "double"
+					},
+					"promoPrice": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
+					"promoStartDate": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
+					},
+					"promoEndDate": {
+						"type": "string",
+						"format": "date-time",
+						"nullable": true
 					}
 				},
 				"required": [
@@ -469,6 +495,69 @@
 				"type": "object",
 				"additionalProperties": false
 			},
+			"TransactionPayment": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"transactionId": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"transaction": {
+						"$ref": "#/components/schemas/Transaction"
+					},
+					"method": {
+						"type": "string"
+					},
+					"amount": {
+						"type": "number",
+						"format": "double"
+					},
+					"tendered": {
+						"type": "number",
+						"format": "double",
+						"description": "Cash tendered for the cash portion of a payment (used to calculate change).\nFor non-cash methods this equals amount."
+					},
+					"reference": {
+						"type": "string",
+						"nullable": true,
+						"description": "Optional reference for non-cash payments (e.g. QRIS approval no., card no.)."
+					}
+				},
+				"required": [
+					"id",
+					"transactionId",
+					"method",
+					"amount",
+					"tendered"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"PaymentInput": {
+				"properties": {
+					"reference": {
+						"type": "string",
+						"nullable": true
+					},
+					"tendered": {
+						"type": "number",
+						"format": "double"
+					},
+					"amount": {
+						"type": "number",
+						"format": "double"
+					},
+					"method": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"amount",
+					"method"
+				],
+				"type": "object"
+			},
 			"TransactionDetailInput": {
 				"properties": {
 					"uomId": {
@@ -505,6 +594,12 @@
 						},
 						"type": "array"
 					},
+					"payments": {
+						"items": {
+							"$ref": "#/components/schemas/PaymentInput"
+						},
+						"type": "array"
+					},
 					"cashAmount": {
 						"type": "number",
 						"format": "double"
@@ -514,8 +609,7 @@
 					}
 				},
 				"required": [
-					"transactionDetails",
-					"paymentMethod"
+					"transactionDetails"
 				],
 				"type": "object"
 			},
@@ -785,6 +879,19 @@
 			},
 			"Price": {
 				"properties": {
+					"promoEndDate": {
+						"type": "string",
+						"nullable": true
+					},
+					"promoStartDate": {
+						"type": "string",
+						"nullable": true
+					},
+					"promoPrice": {
+						"type": "number",
+						"format": "double",
+						"nullable": true
+					},
 					"price": {
 						"type": "number",
 						"format": "double"
@@ -801,6 +908,10 @@
 			},
 			"ProductBody": {
 				"properties": {
+					"hpp": {
+						"type": "number",
+						"format": "double"
+					},
 					"uomId": {
 						"allOf": [
 							{
@@ -1901,6 +2012,140 @@
 					{
 						"in": "query",
 						"name": "barcode",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/transactions/report/x": {
+			"get": {
+				"operationId": "GetXReport",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Transactions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "from",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "to",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "paymentMethod",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "cashierId",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					}
+				]
+			}
+		},
+		"/transactions/report/margin": {
+			"get": {
+				"operationId": "GetMarginReport",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Transactions"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "query",
+						"name": "from",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "to",
+						"required": false,
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "category",
 						"required": false,
 						"schema": {
 							"type": "string"

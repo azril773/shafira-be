@@ -5,16 +5,19 @@ import { uomSeeder } from './uom.seeder';
 import { vendorSeeder } from './vendor.seeder';
 import { productSeeder } from './product.seeder';
 import { purchaseSeeder } from './purchase.seeder';
+import { transactionSeeder } from './transaction.seeder';
 import { User } from '@models/user.model';
-import { ADMIN } from '@constants/user';
+import { ADMIN, CASHIER } from '@constants/user';
 export default class MainSeeder implements Seeder {
   public async run(dataSource: DataSource, factoryManager: SeederFactoryManager): Promise<void> {
     void factoryManager;
     await userSeeder(dataSource)
     await uomSeeder(dataSource)
     const admin = await dataSource.getRepository(User).findOneOrFail({ where: { username: 'admin', role: ADMIN } })
+    const cashier = await dataSource.getRepository(User).findOneOrFail({ where: { username: 'cashier', role: CASHIER } })
     const vendors = await vendorSeeder(dataSource, admin)
     const products = await productSeeder(dataSource)
     await purchaseSeeder(dataSource, products, vendors, admin)
+    await transactionSeeder(dataSource, products, cashier)
   }
 }

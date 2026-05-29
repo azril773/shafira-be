@@ -28,6 +28,10 @@ export const productSchema: Schema = {
     optional: { options: { values: "null" } },
     isUUID: true,
   },
+  hpp: {
+    optional: { options: { values: "undefined" } },
+    isFloat: { options: { min: 0 } },
+  },
   "prices.*.price": {
     isInt: { options: { min: 0 } },
   },
@@ -37,6 +41,18 @@ export const productSchema: Schema = {
     trim: true,
     notEmpty: true,
   },
+  "prices.*.promoPrice": {
+    optional: { options: { values: "null" } },
+    isFloat: { options: { min: 0 } },
+  },
+  "prices.*.promoStartDate": {
+    optional: { options: { values: "null" } },
+    isISO8601: true,
+  },
+  "prices.*.promoEndDate": {
+    optional: { options: { values: "null" } },
+    isISO8601: true,
+  },
 };
 
 export type ProductBody = {
@@ -45,6 +61,7 @@ export type ProductBody = {
   category: string;
   barcode: string;
   uomId?: UUID | null;
+  hpp?: number;
 };
 
 export type UpdateStockBody = {
@@ -67,4 +84,7 @@ export const updateStockSchema: Schema = {
 export type Price = {
   name: string;
   price: number;
+  promoPrice?: number | null;
+  promoStartDate?: string | null;
+  promoEndDate?: string | null;
 };

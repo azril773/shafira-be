@@ -8,9 +8,17 @@ export type TransactionDetailInput = {
   uomId?: UUID | null;
 };
 
+export type PaymentInput = {
+  method: string;
+  amount: number;
+  tendered?: number;
+  reference?: string | null;
+};
+
 export type CreateTransactionBody = {
-  paymentMethod: string;
+  paymentMethod?: string;
   cashAmount?: number;
+  payments?: PaymentInput[];
   transactionDetails: TransactionDetailInput[];
 };
 
@@ -32,18 +40,44 @@ export type VoidTransactionBody = {
   verifierPassword?: string;
 };
 
-const ALLOWED_PAYMENT_METHODS = ["Tunai", "QRIS", "Kartu Debit"];
+export const ALLOWED_PAYMENT_METHODS = [
+  "Tunai",
+  "QRIS",
+  "Kartu Debit",
+  "Transfer",
+  "E-Wallet",
+];
+export const SPLIT_PAYMENT_LABEL = "SPLIT";
 
 export const createTransactionSchema: Schema = {
   paymentMethod: {
+    optional: { options: { values: "undefined" } },
+    isString: true,
+  },
+  cashAmount: {
+    optional: { options: { values: "undefined" } },
+    isFloat: { options: { min: 0 } },
+  },
+  payments: {
+    optional: { options: { values: "undefined" } },
+    isArray: true,
+  },
+  "payments.*.method": {
     isString: true,
     notEmpty: true,
     isIn: { options: [ALLOWED_PAYMENT_METHODS] },
     errorMessage: "Metode pembayaran tidak valid.",
   },
-  cashAmount: {
+  "payments.*.amount": {
+    isFloat: { options: { min: 0 } },
+  },
+  "payments.*.tendered": {
     optional: { options: { values: "undefined" } },
     isFloat: { options: { min: 0 } },
+  },
+  "payments.*.reference": {
+    optional: { options: { values: "null" } },
+    isString: true,
   },
   transactionDetails: {
     isArray: { options: { min: 1 } },

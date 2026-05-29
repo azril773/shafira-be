@@ -3,11 +3,17 @@ import { AuditLog } from "@models/audit_log.model";
 import { Product } from "@models/product.model";
 import { Transaction } from "@models/transaction.model";
 import { TransactionDetail } from "@models/transaction_detail.model";
+import { TransactionPayment } from "@models/transaction_payment.model";
 import { Uom } from "@models/uom.model";
 import { User } from "@models/user.model";
+import { PurchaseDetail } from "@models/purchase_detail.model";
+import { Purchase } from "@models/purchase.model";
 import {
+  ALLOWED_PAYMENT_METHODS,
   CreateTransactionBody,
+  PaymentInput,
   RefundTransactionBody,
+  SPLIT_PAYMENT_LABEL,
   VoidTransactionBody,
 } from "types/transaction_type";
 import { EntityManager, In } from "typeorm";
@@ -72,7 +78,7 @@ export class TransactionService {
       transaction.cashierId = user.id;
       transaction.transactionNo = `TRX-${Date.now()}`;
       transaction.status = TRX_POSTED;
-      transaction.paymentMethod = body.paymentMethod;
+      transaction.paymentMethod = body.paymentMethod || "Tunai";
       transaction.totalPrice = 0;
       transaction.totalQty = 0;
       transaction.cashAmount = 0;
@@ -140,16 +146,62 @@ export class TransactionService {
 
       savedTransaction.totalPrice = totalPrice;
       savedTransaction.totalQty = totalQty;
-      savedTransaction.cashAmount = Number(body.cashAmount ?? 0);
-      savedTransaction.changeAmount = Math.max(
-        0,
-        Number(body.cashAmount ?? 0) - totalPrice,
-      );
+
+      // Normalize payments: accept new payments[] array OR legacy single paymentMethod+cashAmount
+      const rawPayments: PaymentInput[] = Array.isArray(body.payments) && body.payments.length
+        ? body.payments
+        : [
+            {
+              method: body.paymentMethod || "Tunai",
+              amount: totalPrice,
+              tendered:
+                (body.paymentMethod || "Tunai") === "Tunai"
+                  ? Number(body.cashAmount ?? totalPrice)
+                  : totalPrice,
+            },
+          ];
+
+      const paidAmount = rawPayments.reduce((s, p) => s + Number(p.amount || 0), 0);
+      if (paidAmount + 0.001 < totalPrice) {
+        throw new Error(
+          `Total pembayaran (${paidAmount}) kurang dari total tagihan (${totalPrice}).`,
+        );
+      }
+      for (const p of rawPayments) {
+        if (!ALLOWED_PAYMENT_METHODS.includes(p.method)) {
+          throw new Error(`Metode pembayaran tidak valid: ${p.method}`);
+        }
+      }
+
+      // Build payment rows
+      const paymentRows: TransactionPayment[] = rawPayments.map((p) => {
+        const row = new TransactionPayment();
+        row.transactionId = savedTransaction.id;
+        row.method = p.method;
+        row.amount = Number(p.amount || 0);
+        row.tendered = Number(p.tendered ?? p.amount ?? 0);
+        row.reference = p.reference ?? null;
+        return row;
+      });
+      await manager.save(paymentRows);
+
+      // Aggregate cash / change for backward compatibility
+      const cashRow = paymentRows.find((p) => p.method === "Tunai");
+      const cashTendered = cashRow ? Number(cashRow.tendered) : 0;
+      const cashCharged = cashRow ? Number(cashRow.amount) : 0;
+      savedTransaction.cashAmount = cashTendered;
+      savedTransaction.changeAmount = Math.max(0, cashTendered - cashCharged);
+      // Preserve overpayment from other methods as 0 change (non-cash never returns change)
+      if (paymentRows.length > 1) {
+        savedTransaction.paymentMethod = SPLIT_PAYMENT_LABEL;
+      } else {
+        savedTransaction.paymentMethod = paymentRows[0].method;
+      }
       await manager.save(savedTransaction);
 
       return await manager.findOneOrFail(Transaction, {
         where: { id: savedTransaction.id },
-        relations: { transactionDetails: true, cashier: true },
+        relations: { transactionDetails: true, cashier: true, payments: true },
       });
     });
   }
@@ -157,7 +209,7 @@ export class TransactionService {
   public async getTransactionById(id: UUID): Promise<Transaction> {
     const trx = await dataSource.getRepository(Transaction).findOne({
       where: { id },
-      relations: { transactionDetails: true, cashier: true },
+      relations: { transactionDetails: true, cashier: true, payments: true },
     });
     if (!trx) throw new Error("Transaksi tidak ditemukan.");
     return trx;
@@ -183,6 +235,7 @@ export class TransactionService {
       .createQueryBuilder("trx")
       .leftJoinAndSelect("trx.transactionDetails", "detail")
       .leftJoinAndSelect("trx.cashier", "cashier")
+      .leftJoinAndSelect("trx.payments", "payments")
       .orderBy("trx.createdAt", "DESC");
 
     if (status) qb.andWhere("trx.status = :status", { status });
@@ -437,8 +490,335 @@ export class TransactionService {
 
       return await manager.findOneOrFail(Transaction, {
         where: { id: trx.id },
-        relations: { transactionDetails: true, cashier: true },
+        relations: { transactionDetails: true, cashier: true, payments: true },
       });
     });
+  }
+
+  // ---------- REPORTS ----------
+
+  private buildDateRange(from?: string, to?: string): { start: Date; end: Date } {
+    const start = from ? new Date(from) : new Date(0);
+    const end = to ? new Date(to) : new Date();
+    if (to) {
+      end.setHours(23, 59, 59, 999);
+    }
+    return { start, end };
+  }
+
+  /**
+   * X Report — aggregate sales totals optionally filtered by payment method.
+   * Returns totals and per-payment-method breakdown.
+   */
+  public async getXReport({
+    from,
+    to,
+    paymentMethod,
+    cashierId,
+  }: {
+    from?: string;
+    to?: string;
+    paymentMethod?: string;
+    cashierId?: UUID;
+  }): Promise<{
+    period: { from: string; to: string };
+    totalTransactions: number;
+    totalQty: number;
+    totalSales: number;
+    totalReceived: number;
+    totalChange: number;
+    byPaymentMethod: Array<{
+      method: string;
+      transactions: number;
+      qty: number;
+      amount: number;
+      received: number;
+    }>;
+    transactions: Array<{
+      id: string;
+      transactionNo: string;
+      date: Date;
+      cashier: string | null;
+      totalPrice: number;
+      totalQty: number;
+      status: string;
+      methods: string[];
+      payments: Array<{ method: string; amount: number; tendered: number }>;
+    }>;
+  }> {
+    const { start, end } = this.buildDateRange(from, to);
+    const repo = dataSource.getRepository(Transaction);
+    const qb = repo
+      .createQueryBuilder("trx")
+      .leftJoinAndSelect("trx.transactionDetails", "detail")
+      .leftJoinAndSelect("trx.cashier", "cashier")
+      .leftJoinAndSelect("trx.payments", "payments")
+      .where("trx.createdAt BETWEEN :start AND :end", { start, end })
+      .andWhere("trx.status = :status", { status: TRX_POSTED });
+
+    if (cashierId) qb.andWhere("trx.cashierId = :cashierId", { cashierId });
+    const all = await qb.getMany();
+
+    // If filtered by payment method, only include transactions that contain that method.
+    const transactions = paymentMethod
+      ? all.filter((t) =>
+          (t.payments ?? []).some((p) => p.method === paymentMethod),
+        )
+      : all;
+
+    let totalSales = 0;
+    let totalQty = 0;
+    let totalReceived = 0;
+    let totalChange = 0;
+    const methodMap = new Map<
+      string,
+      { transactions: Set<string>; qty: number; amount: number; received: number }
+    >();
+
+    for (const t of transactions) {
+      const trxQty = (t.transactionDetails ?? [])
+        .filter((d) => !d.isRefund)
+        .reduce((s, d) => s + Number(d.qty), 0);
+      totalSales += Number(t.totalPrice);
+      totalQty += trxQty;
+      totalChange += Number(t.changeAmount || 0);
+      for (const p of t.payments ?? []) {
+        if (paymentMethod && p.method !== paymentMethod) continue;
+        const key = p.method;
+        if (!methodMap.has(key)) {
+          methodMap.set(key, {
+            transactions: new Set(),
+            qty: 0,
+            amount: 0,
+            received: 0,
+          });
+        }
+        const slot = methodMap.get(key)!;
+        slot.transactions.add(t.id);
+        slot.amount += Number(p.amount);
+        slot.received += Number(p.tendered);
+        // qty allocation: split qty proportional to share of payment within trx
+        const trxPayTotal = (t.payments ?? []).reduce(
+          (s, pp) => s + Number(pp.amount),
+          0,
+        );
+        const share = trxPayTotal > 0 ? Number(p.amount) / trxPayTotal : 1;
+        slot.qty += trxQty * share;
+        totalReceived += Number(p.tendered);
+      }
+    }
+
+    return {
+      period: { from: start.toISOString(), to: end.toISOString() },
+      totalTransactions: transactions.length,
+      totalQty,
+      totalSales,
+      totalReceived,
+      totalChange,
+      byPaymentMethod: Array.from(methodMap.entries()).map(([method, v]) => ({
+        method,
+        transactions: v.transactions.size,
+        qty: v.qty,
+        amount: v.amount,
+        received: v.received,
+      })),
+      transactions: transactions.map((t) => ({
+        id: t.id,
+        transactionNo: t.transactionNo,
+        date: t.createdAt,
+        cashier: t.cashier?.username ?? null,
+        totalPrice: Number(t.totalPrice),
+        totalQty: Number(t.totalQty),
+        status: t.status,
+        methods: Array.from(new Set((t.payments ?? []).map((p) => p.method))),
+        payments: (t.payments ?? []).map((p) => ({
+          method: p.method,
+          amount: Number(p.amount),
+          tendered: Number(p.tendered),
+        })),
+      })),
+    };
+  }
+
+  /**
+   * Margin report — calculates margin per item, per category, and totals.
+   * Uses Product.hpp as the cost basis. Falls back to last PurchaseDetail.purchasePrice if hpp = 0.
+   */
+  public async getMarginReport({
+    from,
+    to,
+    category,
+  }: {
+    from?: string;
+    to?: string;
+    category?: string;
+  }): Promise<{
+    period: { from: string; to: string };
+    items: Array<{
+      productId: string | null;
+      barcode: string;
+      name: string;
+      category: string;
+      qty: number;
+      revenue: number;
+      cost: number;
+      margin: number;
+      marginPct: number;
+    }>;
+    byCategory: Array<{
+      category: string;
+      qty: number;
+      revenue: number;
+      cost: number;
+      margin: number;
+      marginPct: number;
+    }>;
+    purchase: {
+      totalQty: number;
+      totalValue: number;
+    };
+    totals: {
+      qty: number;
+      revenue: number;
+      cost: number;
+      margin: number;
+      marginPct: number;
+    };
+  }> {
+    const { start, end } = this.buildDateRange(from, to);
+
+    // Sales side
+    const trxRepo = dataSource.getRepository(Transaction);
+    const sales = await trxRepo
+      .createQueryBuilder("trx")
+      .leftJoinAndSelect("trx.transactionDetails", "detail")
+      .where("trx.createdAt BETWEEN :start AND :end", { start, end })
+      .andWhere("trx.status IN (:...statuses)", {
+        statuses: [TRX_POSTED, TRX_REFUNDED],
+      })
+      .getMany();
+
+    // Build cost lookup from products
+    const productIds = new Set<string>();
+    for (const t of sales) for (const d of t.transactionDetails ?? []) productIds.add(d.productId);
+    const products = productIds.size
+      ? await dataSource
+          .getRepository(Product)
+          .find({ where: { id: In(Array.from(productIds)) } })
+      : [];
+    const hppMap = new Map(products.map((p) => [p.id, Number(p.hpp || 0)]));
+
+    // Latest purchase price fallback per product
+    const purchaseDetailsLatest = productIds.size
+      ? await dataSource
+          .getRepository(PurchaseDetail)
+          .createQueryBuilder("pd")
+          .leftJoin("pd.purchase", "p")
+          .where("pd.productId IN (:...ids)", { ids: Array.from(productIds) })
+          .orderBy("p.purchaseDate", "DESC")
+          .getMany()
+      : [];
+    const latestCost = new Map<string, number>();
+    for (const pd of purchaseDetailsLatest) {
+      if (!latestCost.has(pd.productId))
+        latestCost.set(pd.productId, Number(pd.purchasePrice));
+    }
+
+    const itemMap = new Map<
+      string,
+      {
+        productId: string | null;
+        barcode: string;
+        name: string;
+        category: string;
+        qty: number;
+        revenue: number;
+        cost: number;
+      }
+    >();
+    for (const t of sales) {
+      for (const d of t.transactionDetails ?? []) {
+        if (d.isRefund) continue;
+        if (category && d.historicalCategory !== category) continue;
+        const key = d.productId || d.historicalBarcode || d.historicalName;
+        const unitCost =
+          hppMap.get(d.productId) ?? latestCost.get(d.productId) ?? 0;
+        const qty = Number(d.qty);
+        const rev = qty * Number(d.historicalPrice);
+        const cost = qty * unitCost;
+        const slot = itemMap.get(key) ?? {
+          productId: d.productId || null,
+          barcode: d.historicalBarcode,
+          name: d.historicalName,
+          category: d.historicalCategory,
+          qty: 0,
+          revenue: 0,
+          cost: 0,
+        };
+        slot.qty += qty;
+        slot.revenue += rev;
+        slot.cost += cost;
+        itemMap.set(key, slot);
+      }
+    }
+
+    const items = Array.from(itemMap.values()).map((it) => {
+      const margin = it.revenue - it.cost;
+      const marginPct = it.revenue > 0 ? (margin / it.revenue) * 100 : 0;
+      return { ...it, margin, marginPct };
+    });
+
+    const catAgg = new Map<
+      string,
+      { qty: number; revenue: number; cost: number }
+    >();
+    for (const it of items) {
+      const slot = catAgg.get(it.category) ?? { qty: 0, revenue: 0, cost: 0 };
+      slot.qty += it.qty;
+      slot.revenue += it.revenue;
+      slot.cost += it.cost;
+      catAgg.set(it.category, slot);
+    }
+    const byCategory = Array.from(catAgg.entries()).map(([cat, v]) => {
+      const margin = v.revenue - v.cost;
+      const marginPct = v.revenue > 0 ? (margin / v.revenue) * 100 : 0;
+      return { category: cat, ...v, margin, marginPct };
+    });
+
+    // Purchase side aggregate
+    const purchases = await dataSource
+      .getRepository(Purchase)
+      .createQueryBuilder("p")
+      .leftJoinAndSelect("p.purchaseDetails", "pd")
+      .where("p.purchaseDate BETWEEN :start AND :end", { start, end })
+      .andWhere("p.status = :status", { status: "POSTED" })
+      .getMany();
+    let purchaseQty = 0;
+    let purchaseValue = 0;
+    for (const p of purchases) {
+      for (const pd of p.purchaseDetails ?? []) {
+        purchaseQty += Number(pd.qty);
+        purchaseValue += Number(pd.qty) * Number(pd.purchasePrice);
+      }
+    }
+
+    const totalQty = items.reduce((s, i) => s + i.qty, 0);
+    const totalRev = items.reduce((s, i) => s + i.revenue, 0);
+    const totalCost = items.reduce((s, i) => s + i.cost, 0);
+    const totalMargin = totalRev - totalCost;
+
+    return {
+      period: { from: start.toISOString(), to: end.toISOString() },
+      items: items.sort((a, b) => b.margin - a.margin),
+      byCategory: byCategory.sort((a, b) => b.margin - a.margin),
+      purchase: { totalQty: purchaseQty, totalValue: purchaseValue },
+      totals: {
+        qty: totalQty,
+        revenue: totalRev,
+        cost: totalCost,
+        margin: totalMargin,
+        marginPct: totalRev > 0 ? (totalMargin / totalRev) * 100 : 0,
+      },
+    };
   }
 }

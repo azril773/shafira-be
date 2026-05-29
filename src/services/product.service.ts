@@ -51,6 +51,9 @@ export class ProductService {
       const price = new PriceProduct();
       price.name = priceData.name;
       price.price = priceData.price;
+      price.promoPrice = priceData.promoPrice ?? null;
+      price.promoStartDate = priceData.promoStartDate ? new Date(priceData.promoStartDate) : null;
+      price.promoEndDate = priceData.promoEndDate ? new Date(priceData.promoEndDate) : null;
       prices.push(price);
     }
 
@@ -61,6 +64,7 @@ export class ProductService {
     product.barcode = body.barcode;
     product.code = code;
     product.uom_id = body.uomId ?? null;
+    product.hpp = body.hpp ?? 0;
     return await this.productRepository.save(product);
   }
 
@@ -89,6 +93,7 @@ export class ProductService {
     product.category = body.category ?? product.category;
     product.barcode = body.barcode ?? product.barcode;
     if (body.uomId !== undefined) product.uom_id = body.uomId;
+    if (body.hpp !== undefined) product.hpp = body.hpp;
 
     const existingPrices = product.prices;
     const newPrices: PriceProduct[] = [];
@@ -105,13 +110,20 @@ export class ProductService {
           new PriceProduct();
         price.name = priceData.name;
         price.price = priceData.price;
+        price.promoPrice = priceData.promoPrice ?? null;
+        price.promoStartDate = priceData.promoStartDate
+          ? new Date(priceData.promoStartDate)
+          : null;
+        price.promoEndDate = priceData.promoEndDate
+          ? new Date(priceData.promoEndDate)
+          : null;
         newPrices.push(price);
       }
     }
     const toDelete = existingPrices.filter(
       (p) => !body.prices?.some((bp) => bp.name === p.name),
     );
-    if (toDelete.length > 0) await this.priceRepository.delete(toDelete);
+    if (toDelete.length > 0) await this.priceRepository.delete(toDelete.map((p) => p.id));
     product.prices = newPrices;
     return await this.productRepository.save(product);
   }
@@ -182,6 +194,11 @@ export class ProductService {
       queryBuilder.andWhere("product.barcode = :barcode OR product.code = :code", {
         barcode,
         code: barcode,
+      });
+    }
+    if (code) {
+      queryBuilder.andWhere("LOWER(product.code) LIKE :code", {
+        code: `%${code.toLowerCase()}%`,
       });
     }
     if (name) {

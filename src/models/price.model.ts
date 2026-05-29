@@ -31,4 +31,17 @@ export class PriceProduct {
     transformer: new DecimalTransformer(),
   })
   price!: number;
+
+  @Column({
+    type: "decimal",
+    nullable: true,
+    transformer: new DecimalTransformer(),
+  })
+  promoPrice?: number | null;
+
+  @Column({ type: "date", nullable: true })
+  promoStartDate?: Date | null;
+
+  @Column({ type: "date", nullable: true })
+  promoEndDate?: Date | null;
 }
