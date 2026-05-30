@@ -290,15 +290,8 @@ export class PurchaseService {
         for (const detail of details) {
           const product = productMap.get(detail.productId);
           if (!product) throw new Error("product tidak ada");
-          const oldStock = Number(product.stock);
-          const oldHpp = Number(product.hpp);
-          const purchasedQty = Number(detail.qty);
-          const purchasePrice = Number(detail.purchasePrice);
-          const newTotalQty = oldStock + purchasedQty;
-          if (newTotalQty > 0) {
-            product.hpp = (oldStock * oldHpp + purchasedQty * purchasePrice) / newTotalQty;
-          }
-          product.stock += purchasedQty;
+          product.hpp = Number(detail.purchasePrice);
+          product.stock += Number(detail.qty);
         }
         await manager.save(Array.from(productMap.values()));
       } else if (purchase.status === POSTED && body.status === CANCELLED) {
