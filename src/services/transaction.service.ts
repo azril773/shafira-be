@@ -1,5 +1,6 @@
 import dataSource from "@config/database";
 import { AuditLog } from "@models/audit_log.model";
+import { PriceProduct } from "@models/price.model";
 import { Product } from "@models/product.model";
 import { Transaction } from "@models/transaction.model";
 import { TransactionDetail } from "@models/transaction_detail.model";
@@ -39,6 +40,28 @@ async function resolveVerifier(
 export const TRX_POSTED = "POSTED";
 export const TRX_VOIDED = "VOIDED";
 export const TRX_REFUNDED = "REFUNDED";
+
+/**
+ * Mengembalikan harga efektif untuk sebuah price option.
+ * Jika promoPrice > 0 dan hari ini berada di dalam rentang promo, kembalikan promoPrice.
+ */
+function getEffectivePrice(priceOption: PriceProduct): number {
+  const promo = Number(priceOption.promoPrice || 0);
+  if (promo <= 0) return Number(priceOption.price);
+  const today = new Date();
+  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if (priceOption.promoStartDate) {
+    const start = new Date(priceOption.promoStartDate);
+    const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    if (todayDate < startDate) return Number(priceOption.price);
+  }
+  if (priceOption.promoEndDate) {
+    const end = new Date(priceOption.promoEndDate);
+    const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    if (todayDate > endDate) return Number(priceOption.price);
+  }
+  return promo;
+}
 
 export class TransactionService {
   public async createTransaction(
@@ -124,8 +147,9 @@ export class TransactionService {
         detail.historicalBarcode = product.barcode;
         detail.historicalCode = product.code;
         detail.historicalCategory = product.category;
+        const effectivePrice = getEffectivePrice(priceOption);
         detail.historicalPriceName = priceOption.name;
-        detail.historicalPrice = Number(priceOption.price);
+        detail.historicalPrice = effectivePrice;
         detail.uomId = resolvedUomId;
         detail.historicalUomCode = resolvedUom?.code ?? null;
         detail.historicalUomName = resolvedUom?.name ?? null;
@@ -133,7 +157,7 @@ export class TransactionService {
         detail.isRefund = false;
         details.push(detail);
 
-        totalPrice += Number(priceOption.price) * d.qty;
+        totalPrice += effectivePrice * d.qty;
         totalQty += d.qty;
       }
 
