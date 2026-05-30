@@ -8,7 +8,7 @@ const options: DataSourceOptions & SeederOptions = {
   port: Number(process.env.POSTGRES_PORT) || 5432,
   username: process.env.POSTGRES_USER || 'azril',
   password: process.env.POSTGRES_PASSWORD || '123',
-  database: process.env.POSTGRES_DB || 'shafira_db',
+  database: process.env.POSTGRES_DB || 'shafira_db_clone',
   entities: ['{src,build}/models/*.model{.ts,.js}'],
   // synchronize: true,
   // additional config options brought by typeorm-extension
