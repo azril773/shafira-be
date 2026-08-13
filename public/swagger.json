@@ -667,6 +667,163 @@
 				],
 				"type": "object"
 			},
+			"SuspendedCartItem": {
+				"properties": {
+					"key": {
+						"type": "string"
+					},
+					"qty": {
+						"type": "number",
+						"format": "double"
+					},
+					"uomName": {
+						"type": "string",
+						"nullable": true
+					},
+					"uomCode": {
+						"type": "string",
+						"nullable": true
+					},
+					"uomId": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/UUID"
+							}
+						],
+						"nullable": true
+					},
+					"stock": {
+						"type": "number",
+						"format": "double"
+					},
+					"isPromo": {
+						"type": "boolean"
+					},
+					"originalPrice": {
+						"type": "number",
+						"format": "double"
+					},
+					"price": {
+						"type": "number",
+						"format": "double"
+					},
+					"priceName": {
+						"type": "string"
+					},
+					"priceLabel": {
+						"type": "string"
+					},
+					"barcode": {
+						"type": "string"
+					},
+					"category": {
+						"type": "string"
+					},
+					"name": {
+						"type": "string"
+					},
+					"id": {
+						"$ref": "#/components/schemas/UUID"
+					}
+				},
+				"required": [
+					"key",
+					"qty",
+					"stock",
+					"price",
+					"priceName",
+					"priceLabel",
+					"barcode",
+					"category",
+					"name",
+					"id"
+				],
+				"type": "object"
+			},
+			"SuspendedCart": {
+				"properties": {
+					"id": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"cashierId": {
+						"$ref": "#/components/schemas/UUID"
+					},
+					"cashier": {
+						"$ref": "#/components/schemas/User"
+					},
+					"label": {
+						"type": "string"
+					},
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/SuspendedCartItem"
+						},
+						"type": "array"
+					},
+					"savedAt": {
+						"type": "string",
+						"format": "date-time"
+					}
+				},
+				"required": [
+					"id",
+					"cashierId",
+					"label",
+					"items",
+					"savedAt"
+				],
+				"type": "object",
+				"additionalProperties": false
+			},
+			"CreateSuspendedCartBody": {
+				"properties": {
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/SuspendedCartItem"
+						},
+						"type": "array"
+					},
+					"label": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"items"
+				],
+				"type": "object"
+			},
+			"ResumeSuspendedCartResult": {
+				"properties": {
+					"suspended": {
+						"items": {
+							"$ref": "#/components/schemas/SuspendedCart"
+						},
+						"type": "array"
+					},
+					"items": {
+						"items": {
+							"$ref": "#/components/schemas/SuspendedCartItem"
+						},
+						"type": "array"
+					}
+				},
+				"required": [
+					"suspended",
+					"items"
+				],
+				"type": "object"
+			},
+			"ResumeSuspendedCartBody": {
+				"properties": {
+					"currentItems": {
+						"items": {
+							"$ref": "#/components/schemas/SuspendedCartItem"
+						},
+						"type": "array"
+					}
+				},
+				"type": "object"
+			},
 			"Purchase": {
 				"properties": {
 					"createdById": {
@@ -2319,6 +2476,213 @@
 						}
 					}
 				}
+			}
+		},
+		"/suspended-carts": {
+			"get": {
+				"operationId": "List",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"items": {
+										"$ref": "#/components/schemas/SuspendedCart"
+									},
+									"type": "array"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Suspended Carts"
+				],
+				"security": [],
+				"parameters": []
+			},
+			"post": {
+				"operationId": "Create",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/SuspendedCart"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Suspended Carts"
+				],
+				"security": [],
+				"parameters": [],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/CreateSuspendedCartBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/suspended-carts/{id}/resume": {
+			"post": {
+				"operationId": "Resume",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/ResumeSuspendedCartResult"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Suspended Carts"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/ResumeSuspendedCartBody"
+							}
+						}
+					}
+				}
+			}
+		},
+		"/suspended-carts/{id}": {
+			"delete": {
+				"operationId": "Remove",
+				"responses": {
+					"200": {
+						"description": "Ok",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "",
+						"content": {
+							"application/json": {
+								"schema": {
+									"properties": {
+										"message": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"message"
+									],
+									"type": "object"
+								}
+							}
+						}
+					}
+				},
+				"tags": [
+					"Suspended Carts"
+				],
+				"security": [],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "id",
+						"required": true,
+						"schema": {
+							"$ref": "#/components/schemas/UUID"
+						}
+					}
+				]
 			}
 		},
 		"/purchases": {

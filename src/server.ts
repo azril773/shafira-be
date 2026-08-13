@@ -17,6 +17,7 @@ import { app, configureApp } from './app';
         await dataSource.dropDatabase()
         await dataSource.synchronize();
       }
+      await dataSource.runMigrations();
       if (process.env.RUN_SEEDERS === 'true') {
         await runSeeders(dataSource);
       }
